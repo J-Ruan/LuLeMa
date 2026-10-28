@@ -37,6 +37,8 @@ Android 8.0+ · Kotlin · Jetpack Compose · 完全离线 · MIT
 |---|---|---|---|
 | <img src="docs/screenshots/home.png" width="160" alt="首页"/> | <img src="docs/screenshots/calendar.png" width="160" alt="日历"/> | <img src="docs/screenshots/stats.png" width="160" alt="统计"/> | <img src="docs/screenshots/settings.png" width="160" alt="我的"/> |
 
+<img src="docs/screenshots/settings-dark.png" width="180" alt="深色模式及系统状态栏"/>
+
 测试与设备验证范围见 [验证报告](docs/VALIDATION.md)。
 
 ## 本地编译
