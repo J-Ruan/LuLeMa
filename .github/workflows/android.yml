@@ -93,10 +93,12 @@ jobs:
       - name: Collect device diagnostics
         if: always()
         run: |
-          "$ANDROID_HOME/platform-tools/adb" logcat -d > device-logcat.txt || true
-          "$ANDROID_HOME/platform-tools/adb" root || true
-          timeout 30 "$ANDROID_HOME/platform-tools/adb" wait-for-device || true
-          "$ANDROID_HOME/platform-tools/adb" pull /data/media/0/Android/data/com.lulema.app/files/screenshots screenshots || true
+          if timeout 5 "$ANDROID_HOME/platform-tools/adb" get-state >/dev/null 2>&1; then
+            timeout 20 "$ANDROID_HOME/platform-tools/adb" logcat -d > device-logcat.txt || true
+            timeout 20 "$ANDROID_HOME/platform-tools/adb" root || true
+            timeout 20 "$ANDROID_HOME/platform-tools/adb" wait-for-device || true
+            timeout 20 "$ANDROID_HOME/platform-tools/adb" pull /data/media/0/Android/data/com.lulema.app/files/screenshots screenshots || true
+          fi
       - uses: actions/upload-artifact@v7
         if: always()
         with:
