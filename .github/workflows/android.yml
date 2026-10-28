@@ -66,6 +66,8 @@ jobs:
           trap 'echo "Failed command: $BASH_COMMAND" >> "$GITHUB_STEP_SUMMARY"; tail -60 emulator.log >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true' ERR
           export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libpulse0 libasound2t64 libnss3 libx11-xcb1 libxcb-cursor0 libxcomposite1 libxcursor1 libxi6 libxtst6 libvulkan1
           sudo chmod 666 /dev/kvm
           test -n "$ANDROID_HOME"
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools' 'emulator' 'system-images;android-30;default;x86_64'
@@ -75,6 +77,7 @@ jobs:
           sleep 3
           if ! kill -0 "$emulator_pid" 2>/dev/null; then
             cat emulator.log >> "$GITHUB_STEP_SUMMARY"
+            tail -20 emulator.log | while IFS= read -r line; do echo "::error::${line//%/%25}"; done
             exit 1
           fi
           timeout 120 adb wait-for-device
@@ -164,7 +167,7 @@ jobs:
           echo "$badging" | head -1 | grep -F "versionName='$VERSION'"
           test "$GITHUB_REF_NAME" = "v$VERSION"
           (cd dist && sha256sum *.apk > SHA256SUMS)
-          printf '# 撸了吗 %s\n\n发布日期：%s（UTC）\n\n人类迷惑行为研究所正式营业。\n\n- 离线档案、月历和统计\n- 成就、低频中性提醒和深色模式\n- 明文或 AES-GCM 密码备份、事务导入\n\n首次安装前请核对 SHA256SUMS。升级前请备份。通知可能被系统延迟；不提供医学诊断。\n' "$GITHUB_REF_NAME" "$(date -u +%F)" > dist/RELEASE_NOTES.md
+          printf '# 撸了吗 %s\n\n发布日期：%s（Asia/Shanghai）\n\n人类迷惑行为研究所正式营业。\n\n- 离线档案、月历和统计\n- 成就、低频中性提醒和深色模式\n- 明文或 AES-GCM 密码备份、事务导入\n\n首次安装前请核对 SHA256SUMS。升级前请备份。通知可能被系统延迟；不提供医学诊断。\n' "$GITHUB_REF_NAME" "$(TZ=Asia/Shanghai date +%F)" > dist/RELEASE_NOTES.md
       - uses: actions/upload-artifact@v7
         if: always() && steps.sign.outcome == 'success'
         with:
