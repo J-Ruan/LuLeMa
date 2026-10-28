@@ -117,7 +117,7 @@ jobs:
             device-logcat.txt
             screenshots/
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-debug.')
     needs: [build, device-tests]
     permissions:
       contents: write
@@ -185,3 +185,29 @@ jobs:
       - name: Remove temporary signing material
         if: always()
         run: rm -f '${{ runner.temp }}/release.jks'
+
+  debug-prerelease:
+    if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref_name, '-debug.')
+    needs: [build, device-tests]
+    permissions:
+      contents: write
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Download tested Debug APK and verify checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF_NAME" == "v${VERSION}-debug."* ]]
+          mkdir -p dist
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "LuLeMa-v${VERSION}-debug" --dir dist
+          test -s "dist/LuLeMa-v${VERSION}-debug.apk"
+          (cd dist && sha256sum --check SHA256SUMS)
+      - name: Publish clearly labeled Debug prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "dist/LuLeMa-v${VERSION}-debug.apk" dist/SHA256SUMS --repo "$GITHUB_REPOSITORY" --verify-tag --prerelease --latest=false --title "撸了吗 v${VERSION} · Debug 测试版" --notes-file docs/DEBUG_RELEASE_NOTES.md
