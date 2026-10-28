@@ -53,11 +53,10 @@ object BackupCodec {
   require(bytes.size in 1..MAX_BYTES) { "备份文件为空或超过 16 MiB" }
   val text=bytes.toString(Charsets.UTF_8)
   checkDepth(text)
-  val obj=kotlinx.serialization.json.Json.parseToJsonElement(text)
-  val encrypted=(obj as? kotlinx.serialization.json.JsonObject)?.containsKey("encryptedVersion")==true
-  val plain=if(encrypted) {
+  val envelope=try {ArchiveJson.decodeFromString<Encrypted>(text)} catch(_:kotlinx.serialization.SerializationException) {null}
+  val plain=if(envelope!=null) {
    require(password!=null && password.size>=8) { "请输入至少 8 位的备份密码" }
-   val e=ArchiveJson.decodeFromString<Encrypted>(text)
+   val e=envelope
    require(e.encryptedVersion==1) { "不支持此加密版本" }
    val salt=Base64.getDecoder().decode(e.salt);val iv=Base64.getDecoder().decode(e.iv)
    require(salt.size==16 && iv.size==12) { "加密参数无效" }

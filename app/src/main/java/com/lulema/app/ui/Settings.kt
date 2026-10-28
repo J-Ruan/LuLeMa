@@ -5,7 +5,7 @@ import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -78,7 +78,7 @@ import java.time.*
    Section("关于撸了吗")
    Text("LuLeMa · v${BuildConfig.VERSION_NAME}\nSerious tracking. Ridiculous vibes.")
    Text("这是娱乐性记录工具，不是医学诊断工具。无需登录，无广告，无追踪。\nMIT License · © 2026 LuLeMa contributors",color=Color.Gray)
-   TextButton(onClick={runCatching {context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://github.com/J-Ruan/LuLeMa")))}.onFailure {info="没有可用浏览器，请手动访问 github.com/J-Ruan/LuLeMa"}}) {Text("GitHub 开源项目 ↗")}
+   TextButton(onClick={runCatching {context.startActivity(Intent(Intent.ACTION_VIEW,"https://github.com/J-Ruan/LuLeMa".toUri()))}.onFailure {info="没有可用浏览器，请手动访问 github.com/J-Ruan/LuLeMa"}}) {Text("GitHub 开源项目 ↗")}
    Text("外部链接由系统浏览器打开，App 本身不申请网络权限。",style=MaterialTheme.typography.bodySmall,color=Color.Gray)
   }
  }

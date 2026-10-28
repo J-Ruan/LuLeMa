@@ -14,20 +14,20 @@ env:
   VERSION: 0.1.0
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - name: Prepare SDK and Wrapper
         run: |
           chmod +x gradlew
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          test -n "$ANDROID_HOME"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Unit tests, Lint, Debug APK and device test APK
         run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
       - name: Name APK and verify signature
@@ -36,14 +36,14 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk "dist/LuLeMa-v${VERSION}-debug.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "dist/LuLeMa-v${VERSION}-debug.apk"
           cd dist && sha256sum *.apk > SHA256SUMS
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: LuLeMa-v${{ env.VERSION }}-debug
           path: dist/
           if-no-files-found: error
       - name: Retain checks and APKs even when a check fails
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: validation-reports
           path: |
@@ -51,21 +51,21 @@ jobs:
             app/build/test-results/
             app/build/outputs/apk/
   device-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - name: Configure accelerated emulator
         run: |
           sudo chmod 666 /dev/kvm
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'system-images;android-30;default;x86_64'
-          echo no | avdmanager create avd --force --name ci --package 'system-images;android-30;default;x86_64'
+          test -n "$ANDROID_HOME"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'system-images;android-30;default;x86_64'
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force --name ci --package 'system-images;android-30;default;x86_64'
           "$ANDROID_HOME/emulator/emulator" -avd ci -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > emulator.log 2>&1 &
           adb wait-for-device
           for i in $(seq 1 180); do
@@ -81,7 +81,7 @@ jobs:
       - name: Collect device diagnostics
         if: always()
         run: adb logcat -d > device-logcat.txt || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: device-test-reports
@@ -95,10 +95,10 @@ jobs:
     needs: [build, device-tests]
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check signing requirements
         id: keys
         env:
@@ -113,14 +113,12 @@ jobs:
             echo 'ready=false' >> "$GITHUB_OUTPUT"
             echo 'Release skipped: one or more signing secrets are missing. Debug APK remains in build artifacts.' >> "$GITHUB_STEP_SUMMARY"
           fi
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         if: steps.keys.outputs.ready == 'true'
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
-        if: steps.keys.outputs.ready == 'true'
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         if: steps.keys.outputs.ready == 'true'
       - name: Build signed release and checksums
         id: sign
@@ -137,7 +135,8 @@ jobs:
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_FILE"
           chmod 600 "$KEYSTORE_FILE"
           chmod +x gradlew
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          test -n "$ANDROID_HOME"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
           ./gradlew --no-daemon :app:assembleRelease
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk "dist/LuLeMa-v${VERSION}.apk"
@@ -147,7 +146,7 @@ jobs:
           test "$GITHUB_REF_NAME" = "v$VERSION"
           (cd dist && sha256sum *.apk > SHA256SUMS)
           printf '# 撸了吗 %s\n\n发布日期：%s（UTC）\n\n人类迷惑行为研究所正式营业。\n\n- 离线档案、月历和统计\n- 成就、低频中性提醒和深色模式\n- 明文或 AES-GCM 密码备份、事务导入\n\n首次安装前请核对 SHA256SUMS。升级前请备份。通知可能被系统延迟；不提供医学诊断。\n' "$GITHUB_REF_NAME" "$(date -u +%F)" > dist/RELEASE_NOTES.md
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always() && steps.sign.outcome == 'success'
         with:
           name: LuLeMa-v${{ env.VERSION }}-release
