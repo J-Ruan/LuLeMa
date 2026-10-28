@@ -62,6 +62,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Configure accelerated emulator
         run: |
+          set -Eeuo pipefail
+          trap 'echo "Failed command: $BASH_COMMAND" >> "$GITHUB_STEP_SUMMARY"' ERR
+          export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
           sudo chmod 666 /dev/kvm
           test -n "$ANDROID_HOME"
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'system-images;android-30;default;x86_64'
@@ -80,7 +84,9 @@ jobs:
       - run: chmod +x gradlew && ./gradlew --no-daemon :app:connectedDebugAndroidTest
       - name: Collect device diagnostics
         if: always()
-        run: adb logcat -d > device-logcat.txt || true
+        run: |
+          "$ANDROID_HOME/platform-tools/adb" logcat -d > device-logcat.txt || true
+          "$ANDROID_HOME/platform-tools/adb" pull /sdcard/Android/data/com.lulema.app/files/screenshots screenshots || true
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -90,6 +96,7 @@ jobs:
             app/build/outputs/androidTest-results/
             emulator.log
             device-logcat.txt
+            screenshots/
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [build, device-tests]
