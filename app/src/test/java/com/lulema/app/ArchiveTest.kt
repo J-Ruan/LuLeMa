@@ -48,6 +48,14 @@ class ArchiveTest {
   assertThrows(IllegalArgumentException::class.java) {BackupCodec.encode(backup().copy(formatVersion=99))}
   val e=entry();assertThrows(IllegalArgumentException::class.java) {BackupCodec.encode(backup().copy(records=listOf(e,e)))}
  }
+ @Test fun missingVersionOrRecordIdentityMustNotInventData() {
+  val original=backup()
+  val encoded=BackupCodec.encode(original).toString(Charsets.UTF_8)
+  assertThrows(Exception::class.java) {BackupCodec.decode(encoded.replace("\"formatVersion\":1,", "").toByteArray())}
+  val e=original.records.single()
+  assertThrows(Exception::class.java) {BackupCodec.decode(encoded.replace("\"id\":\"${e.id}\",", "").toByteArray())}
+  assertThrows(Exception::class.java) {BackupCodec.decode("{\"formatVersion\":1,\"exportedAt\":1,\"records\":[{}],\"settings\":{}}".toByteArray())}
+ }
  @Test fun excessiveNestingAndTruncatedJsonAreRejected() {
   assertThrows(IllegalArgumentException::class.java) {BackupCodec.decode(("[".repeat(10000)+"]".repeat(10000)).toByteArray())}
   assertThrows(IllegalArgumentException::class.java) {BackupCodec.decode("{\"records\": [".toByteArray())}

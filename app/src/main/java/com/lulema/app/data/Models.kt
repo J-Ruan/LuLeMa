@@ -3,6 +3,7 @@ package com.lulema.app.data
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Required
 import kotlinx.serialization.json.Json
 import java.time.LocalDate
 import java.util.UUID
@@ -10,17 +11,17 @@ import java.util.UUID
 @Serializable
 @Entity(tableName = "records")
 data class Entry(
- @PrimaryKey val id: String = UUID.randomUUID().toString(),
- val day: Long = LocalDate.now().toEpochDay(),
+ @Required @PrimaryKey val id: String = UUID.randomUUID().toString(),
+ @Required val day: Long = LocalDate.now().toEpochDay(),
  val minute: Int? = null,
- val duration: Int = 0,
+ @Required val duration: Int = 0,
  val mood: String = "",
  val note: String = "",
- val created: Long = System.currentTimeMillis(),
- val modified: Long = created
+ @Required val created: Long = System.currentTimeMillis(),
+ @Required val modified: Long = created
 ) {
  fun validate() {
-  require(runCatching { UUID.fromString(id) }.isSuccess) { "记录 ID 无效" }
+  require(runCatching { UUID.fromString(id).toString()==id }.getOrDefault(false)) { "记录 ID 无效" }
   require(day in LocalDate.of(1900,1,1).toEpochDay()..LocalDate.now().toEpochDay()) { "日期需在 1900 年至今天之间" }
   require(minute == null || minute in 0..1439) { "时间无效" }
   require(duration in 0..1440) { "时长需为 0–1440 分钟" }
@@ -43,7 +44,8 @@ data class Preferences(
  fun validate() {
   require(nickname.length in 1..30 && theme in listOf("system","light","dark")) { "设置无效" }
   require(reminderHour in 0..23 && reminderMinute in 0..59 && reminderDays in 7..90) { "提醒设置无效" }
-  require(achievements.size <= 20 && achievements.values.all { it > 0 }) { "成就数据无效" }
+  require(changedSettings.all {it in setOf("nickname","theme","weekStart","reminders","reminderTime","reminderInterval")}) {"设置来源无效"}
+  require(achievements.keys.all { it in setOf("first","duration","history","stats","backup","dark","secret","settings","year") } && achievements.values.all { it > 0 }) { "成就数据无效" }
  }
  fun unlock(key: String): Preferences = if(key in achievements) this else copy(achievements = achievements + (key to System.currentTimeMillis()))
 }

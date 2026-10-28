@@ -63,30 +63,34 @@ jobs:
       - name: Configure accelerated emulator
         run: |
           set -Eeuo pipefail
-          trap 'echo "Failed command: $BASH_COMMAND" >> "$GITHUB_STEP_SUMMARY"' ERR
+          trap 'echo "Failed command: $BASH_COMMAND" >> "$GITHUB_STEP_SUMMARY"; tail -60 emulator.log >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true' ERR
           export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
           sudo chmod 666 /dev/kvm
           test -n "$ANDROID_HOME"
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'system-images;android-30;default;x86_64'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools' 'emulator' 'system-images;android-30;default;x86_64'
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force --name ci --package 'system-images;android-30;default;x86_64'
           "$ANDROID_HOME/emulator/emulator" -avd ci -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > emulator.log 2>&1 &
-          adb wait-for-device
+          timeout 120 adb wait-for-device
           for i in $(seq 1 180); do
             if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
             sleep 2
           done
           test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1
           adb shell input keyevent 82
+          adb shell svc wifi disable
+          adb shell svc data disable
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
-      - run: chmod +x gradlew && ./gradlew --no-daemon :app:connectedDebugAndroidTest
+      - run: chmod +x gradlew && ./gradlew --no-daemon :app:connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
       - name: Collect device diagnostics
         if: always()
         run: |
           "$ANDROID_HOME/platform-tools/adb" logcat -d > device-logcat.txt || true
-          "$ANDROID_HOME/platform-tools/adb" pull /sdcard/Android/data/com.lulema.app/files/screenshots screenshots || true
+          "$ANDROID_HOME/platform-tools/adb" root || true
+          timeout 30 "$ANDROID_HOME/platform-tools/adb" wait-for-device || true
+          "$ANDROID_HOME/platform-tools/adb" pull /data/media/0/Android/data/com.lulema.app/files/screenshots screenshots || true
       - uses: actions/upload-artifact@v7
         if: always()
         with:

@@ -35,6 +35,10 @@ class ComposeFlowTest {
  }
  private fun screenshot(name:String) {
   rule.waitForIdle()
+  rule.waitUntil(15000) {
+   rule.onAllNodes(hasText("已解锁",substring=true)).fetchSemanticsNodes().isEmpty() &&
+    rule.onAllNodes(hasText("档案已保存",substring=true)).fetchSemanticsNodes().isEmpty()
+  }
   val inst=InstrumentationRegistry.getInstrumentation()
   val directory=File(inst.targetContext.getExternalFilesDir(null),"screenshots").apply {mkdirs()}
   val image=inst.uiAutomation.takeScreenshot() ?: error("Screenshot unavailable")

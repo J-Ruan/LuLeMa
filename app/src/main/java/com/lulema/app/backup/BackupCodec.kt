@@ -2,6 +2,7 @@ package com.lulema.app.backup
 
 import com.lulema.app.data.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Required
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.Cipher
@@ -11,7 +12,7 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 @Serializable
-data class Backup(val formatVersion: Int = 1, val exportedAt: Long = System.currentTimeMillis(), val records: List<Entry>, val settings: Preferences) {
+data class Backup(@Required val formatVersion: Int = 1, @Required val exportedAt: Long = System.currentTimeMillis(), val records: List<Entry>, val settings: Preferences) {
  fun validate() {
   require(formatVersion==1) { "不支持此备份版本" }
   require(exportedAt > 0 && records.size <= 50000) { "备份大小或时间无效" }
@@ -20,7 +21,7 @@ data class Backup(val formatVersion: Int = 1, val exportedAt: Long = System.curr
  }
 }
 @Serializable
-private data class Encrypted(val encryptedVersion:Int=1,val salt:String,val iv:String,val ciphertext:String)
+private data class Encrypted(@Required val encryptedVersion:Int=1,val salt:String,val iv:String,val ciphertext:String)
 object BackupCodec {
  const val MAX_BYTES=16*1024*1024
  private fun checkDepth(text:String) {
