@@ -9,4 +9,4 @@
 - SAF 明文 / AES-GCM 密码备份、预览、合并或事务覆盖导入。
 - 单元测试、Room / Compose 设备测试，以及自动构建和条件签名发布工作流。
 
-正式发布状态以 GitHub Releases 和验证报告为准。
+已公开发布 [v0.1.0-debug.1 测试版](https://github.com/J-Ruan/LuLeMa/releases/tag/v0.1.0-debug.1)，采用开发签名；正式签名稳定版尚未发布。

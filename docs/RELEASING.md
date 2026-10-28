@@ -51,11 +51,11 @@ Tag 必须与 APK 版本一致。工作流将等待 build 与 device-tests 成�
 
 ## Debug 预发布
 
-需要公开提供测试 APK 时，使用 `v0.1.0-debug.1` 等标签。`debug-prerelease` job 会等待 build 与 device-tests 成功，下载本次构建已核验签名的 Artifact，检查 SHA256SUMS，再以 Pre-release 发布 Debug APK。无需正式签名 Secrets，也不会执行正式签名发布 job。
+当前 [v0.1.0-debug.1](https://github.com/J-Ruan/LuLeMa/releases/tag/v0.1.0-debug.1) 已发布。后续测试版使用 `v0.1.0-debug.2` 等新标签。`debug-prerelease` job 会等待 build 与 device-tests 成功，下载本次构建已核验签名的 Artifact，检查 SHA256SUMS，再以 Pre-release 发布 Debug APK。无需正式签名 Secrets，也不会执行正式签名发布 job。
 
 ```bash
-git tag -a v0.1.0-debug.1 -m 'LuLeMa v0.1.0 Debug prerelease'
-git push origin v0.1.0-debug.1
+git tag -a v0.1.0-debug.2 -m 'LuLeMa v0.1.0 Debug prerelease 2'
+git push origin v0.1.0-debug.2
 ```
 
 后续测试版递增 `debug.2` 等后缀，不覆盖旧标签或安装包。Debug 版本不承诺跨构建签名一致，升级前必须备份。

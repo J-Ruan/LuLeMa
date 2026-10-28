@@ -72,6 +72,19 @@ Lint 警告为 `ObsoleteSdkInt`（自适应图标使用标准 v26 目录）和 `
 
 - 未在真实手机或 Android 8 / Android 13+ 上执行完整回归；特别是通知运行时授权、OEM 省电策略、SAF 各文件提供器与大字体需要真机检查。
 - API 30 的系统 DocumentsUI 加密导出、密码导入预览和合并已实际验证；其他 OEM / 云盘文件提供器尚未回归。
-- 没有正式 Keystore 和四项签名 Secrets，未生成正式签名 Release APK，未创建 GitHub Release。
+- 未配置正式 Keystore 和四项签名 Secrets，因此没有正式签名稳定版。已通过 GitHub Actions 发布 Debug 预发布 `v0.1.0-debug.1`。
 - GitHub API 在当前环境返回 Forbidden；Git 推送及公开网页读取可用，未设置仓库 Topics。维护者可按发布文档手动设置。
 - 已保存云环境 `install_script` / `start_skill` 草稿。保存不代表发布快照或新任务恢复已验证；请在环境设置中检查并保存后发布。
+
+## 已发布的 Debug 预发布
+
+[发布页面](https://github.com/J-Ruan/LuLeMa/releases/tag/v0.1.0-debug.1) · [APK 直接下载](https://github.com/J-Ruan/LuLeMa/releases/download/v0.1.0-debug.1/LuLeMa-v0.1.0-debug.apk)
+
+发布工作流 [40673859448](https://github.com/J-Ruan/LuLeMa/actions/runs/40673859448) 全部成功：build、device-tests 与 debug-prerelease 均通过，正式签名 release job 按设计跳过。
+
+已实际从公开 Release 重新下载 APK，核对附件 SHA256SUMS，并用 apksigner / aapt 验证签名和包信息：
+
+- 大小：18,210,133 字节。
+- SHA-256：`6458447ab22acae42112eec8c00eed31adde2d068900064f7048c22e5f05f8c7`。
+- applicationId `com.lulema.app`，versionName `0.1.0`，minSdk 26，APK Signature Scheme v2 有效，无 INTERNET 权限。
+- 公开页面正确标为 Pre-release / Debug 测试版。它使用 CI 开发签名，与此前本地交付包的签名及校验值可能不同，不能将两份 SHA-256 混用。

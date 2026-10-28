@@ -21,8 +21,12 @@ Android 8.0+ · Kotlin · Jetpack Compose · 完全离线 · MIT
 
 ## APK 下载与安装
 
+**[直接下载 APK · v0.1.0-debug.1 测试版](https://github.com/J-Ruan/LuLeMa/releases/download/v0.1.0-debug.1/LuLeMa-v0.1.0-debug.apk)** · [发布说明与校验文件](https://github.com/J-Ruan/LuLeMa/releases/tag/v0.1.0-debug.1)
+
+公开下载无需登录 GitHub。这是开发签名的 Debug 预发布包，不是正式签名稳定版。
+
 - [Actions 构建与 Artifact](https://github.com/J-Ruan/LuLeMa/actions/workflows/android.yml)：成功构建后下载 `LuLeMa-v0.1.0-debug`，登录 GitHub 并解压 ZIP。
-- [正式 Releases](https://github.com/J-Ruan/LuLeMa/releases)：仅在配置正式密钥并推送版本 Tag 后生成签名发布包；没有 Release 时请使用测试包。
+- [全部 Releases](https://github.com/J-Ruan/LuLeMa/releases)：已提供 Debug 测试预发布；正式签名版本仍需配置正式密钥并推送稳定版本 Tag。
 - 当前环境实际构建 / 安装结果见 [验证报告](docs/VALIDATION.md)。不能把工作流配置存在等同于远端运行成功。
 
 安装：将 APK 下载到 Android 8.0 及以上手机 → 打开文件 → 按系统提示仅为所用文件管理器 / 浏览器允许“安装未知应用” → 安装 → 安装后可关闭该权限。无需注册或网络连接。
