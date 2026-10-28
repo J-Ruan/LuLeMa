@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.LocalActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -26,6 +27,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +60,12 @@ fun ArchiveApp(vm:ArchiveViewModel) {
  val busy by vm.busy.collectAsStateWithLifecycle()
  val preview by vm.preview.collectAsStateWithLifecycle()
  val dark=when(p.theme) {"dark"->true;"light"->false;else->isSystemInDarkTheme()}
+ val window=LocalActivity.current?.window
+ val view=LocalView.current
+ SideEffect { window?.let {
+  WindowCompat.getInsetsController(it,view).isAppearanceLightStatusBars=!dark
+  WindowCompat.getInsetsController(it,view).isAppearanceLightNavigationBars=!dark
+ } }
  val colors=if(dark) darkColorScheme(primary=Color.White,onPrimary=Color.Black,background=Color.Black,surface=Color.Black,surfaceContainer=Color(0xFF1C1C1E),secondaryContainer=Color(0xFF333333)) else lightColorScheme(primary=Color(0xFF111111),onPrimary=Color.White,background=Color.White,surface=Color.White,surfaceContainer=Color(0xFFF5F5F7),secondaryContainer=Color(0xFFE8E8EB))
  MaterialTheme(colorScheme=colors) {
   val nav=rememberNavController()

@@ -35,6 +35,12 @@ class ComposeFlowTest {
   rule.onNodeWithText("我的",useUnmergedTree=true).performClick()
   rule.onNodeWithText("本地昵称").assertExists()
   screenshot("settings")
+  rule.onNodeWithText("深色").performClick()
+  rule.waitUntil(15000) {rule.onAllNodes(hasText("深色") and isSelected()).fetchSemanticsNodes().isNotEmpty()}
+  rule.activityRule.scenario.recreate()
+  rule.waitUntil(15000) {rule.onAllNodes(hasText("深色") and isSelected()).fetchSemanticsNodes().isNotEmpty()}
+  rule.onNodeWithText("深色").assertIsSelected()
+  screenshot("settings-dark")
  }
  private fun screenshot(name:String) {
   rule.waitForIdle()

@@ -99,7 +99,7 @@ import java.time.*
    TextButton(enabled=!exporting || !encrypted || password.length>=8,onClick={
     vm.pendingBackupPassword=if(exporting && !encrypted)"" else password
     password="";dialog=null
-    if(exporting)exportLauncher.launch("LuLeMa-${LocalDate.now()}.lulema") else importLauncher.launch(arrayOf("application/octet-stream","application/json","text/plain","*/*"))
+    if(exporting)exportLauncher.launch("LuLeMa-${LocalDate.now()}.lulema") else importLauncher.launch(arrayOf("*/*"))
    }) {Text(if(exporting)"选择保存位置" else "选择备份文件")}
   })
  }
