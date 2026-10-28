@@ -14,3 +14,8 @@ keystore.properties
 *.lulema
 *.apk
 .DS_Store
+
+backups/
+*.backup.json
+.env
+.env.*

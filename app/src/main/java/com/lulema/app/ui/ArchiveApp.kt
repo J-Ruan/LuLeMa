@@ -217,7 +217,9 @@ private fun timeLabel(e:Entry) = e.minute?.let {"%02d:%02d".format(it/60,it%60)}
  var mood by rememberSaveable(key) {mutableStateOf(entry?.mood?:"")}
  var note by rememberSaveable(key) {mutableStateOf(entry?.note?:"")}
  var error by remember {mutableStateOf("")}
- val base = remember(key) { entry ?: Entry(day=day) }
+ val stableId = rememberSaveable(key) { entry?.id ?: java.util.UUID.randomUUID().toString() }
+ val stableCreated = rememberSaveable(key) { entry?.created ?: System.currentTimeMillis() }
+ val base = remember(key,stableId) { entry ?: Entry(id=stableId,day=day,created=stableCreated) }
  ModalBottomSheet(onDismissRequest=dismiss,sheetState=rememberModalBottomSheetState(skipPartiallyExpanded=true)) {
   Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(horizontal=24.dp).padding(bottom=32.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
    Text(if(entry==null)"记一笔" else "档案详情",fontSize=28.sp,fontWeight=FontWeight.Bold)
@@ -232,7 +234,7 @@ private fun timeLabel(e:Entry) = e.minute?.let {"%02d:%02d".format(it/60,it%60)}
    OutlinedTextField(value=note,onValueChange={if(it.length<=1000)note=it},label={Text("个人备注（可选，1000 字内）")},maxLines=4,modifier=Modifier.fillMaxWidth())
    if(error.isNotEmpty())Text(error,color=MaterialTheme.colorScheme.error)
    Button(onClick={
-    val e=base.copy(day=date,minute=minute,duration=if(duration.isBlank())0 else duration.toIntOrNull()?:-1,mood=mood.trim(),note=note.trim(),modified=System.currentTimeMillis())
+    val e=base.copy(day=date,minute=minute,duration=if(duration.isBlank())0 else duration.toIntOrNull()?:-1,mood=mood.trim(),note=note.trim(),modified=maxOf(System.currentTimeMillis(),base.created,base.modified))
     runCatching {e.validate()}.onSuccess {save(e)}.onFailure {error=it.message?:"请检查输入"}
    },modifier=Modifier.fillMaxWidth()) {Text("保存档案")}
    if(entry!=null)TextButton(onClick={delete(entry.id)}) {Text("删除这条档案",color=MaterialTheme.colorScheme.error)}

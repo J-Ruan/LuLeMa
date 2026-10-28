@@ -31,7 +31,13 @@ Android 8.0+ · Kotlin · Jetpack Compose · 完全离线 · MIT
 
 ## 实际运行截图
 
-截图与设备验证状态见 [验证报告](docs/VALIDATION.md)。不使用 UI 原型冒充真机截图。
+以下截图来自 API 30 模拟器中的真实 App，使用人工构造的数据。
+
+| 首页 | 日历 | 统计 | 我的 |
+|---|---|---|---|
+| <img src="docs/screenshots/home.png" width="160" alt="首页"/> | <img src="docs/screenshots/calendar.png" width="160" alt="日历"/> | <img src="docs/screenshots/stats.png" width="160" alt="统计"/> | <img src="docs/screenshots/settings.png" width="160" alt="我的"/> |
+
+测试与设备验证范围见 [验证报告](docs/VALIDATION.md)。
 
 ## 本地编译
 
@@ -46,7 +52,7 @@ chmod +x gradlew
 
 输出：`app/build/outputs/apk/debug/app-debug.apk`。
 
-连接 USB 设备或启动模拟器后运行设备测试：
+只在专用测试设备或模拟器上运行设备测试（会清空或卸载测试 App，不能用于持有真实档案的设备）：
 
 ```bash
 ./gradlew :app:connectedDebugAndroidTest

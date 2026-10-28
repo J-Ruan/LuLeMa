@@ -20,6 +20,9 @@ class ComposeFlowTest {
   rule.onNodeWithText("+ 记一笔").performClick()
   rule.onNodeWithText("持续时长 / 分钟（可选）").performTextInput("15")
   rule.onNodeWithText("个人备注（可选，1000 字内）").performTextInput("人工构造的 UI 测试档案")
+  rule.activityRule.scenario.recreate()
+  rule.onNodeWithText("人工构造的 UI 测试档案").assertExists()
+  rule.onNodeWithText("15").assertExists()
   rule.onNodeWithText("保存档案").performScrollTo().performClick()
   rule.waitUntil(10000) {rule.onAllNodesWithText("今日档案已入库").fetchSemanticsNodes().isNotEmpty()}
   screenshot("home")
@@ -37,7 +40,7 @@ class ComposeFlowTest {
   rule.waitForIdle()
   rule.waitUntil(15000) {
    rule.onAllNodes(hasText("已解锁",substring=true)).fetchSemanticsNodes().isEmpty() &&
-    rule.onAllNodes(hasText("档案已保存",substring=true)).fetchSemanticsNodes().isEmpty()
+    rule.onAllNodesWithText("档案已保存，宇宙依然正常运转").fetchSemanticsNodes().isEmpty()
   }
   val inst=InstrumentationRegistry.getInstrumentation()
   val directory=File(inst.targetContext.getExternalFilesDir(null),"screenshots").apply {mkdirs()}

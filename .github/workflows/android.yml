@@ -27,7 +27,7 @@ jobs:
         run: |
           chmod +x gradlew
           test -n "$ANDROID_HOME"
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Unit tests, Lint, Debug APK and device test APK
         run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
       - name: Name APK and verify signature
@@ -68,9 +68,15 @@ jobs:
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
           sudo chmod 666 /dev/kvm
           test -n "$ANDROID_HOME"
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools' 'emulator' 'system-images;android-30;default;x86_64'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools' 'emulator' 'system-images;android-30;default;x86_64'
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force --name ci --package 'system-images;android-30;default;x86_64'
           "$ANDROID_HOME/emulator/emulator" -avd ci -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > emulator.log 2>&1 &
+          emulator_pid=$!
+          sleep 3
+          if ! kill -0 "$emulator_pid" 2>/dev/null; then
+            cat emulator.log >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
           timeout 120 adb wait-for-device
           for i in $(seq 1 180); do
             if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
@@ -147,7 +153,7 @@ jobs:
           chmod 600 "$KEYSTORE_FILE"
           chmod +x gradlew
           test -n "$ANDROID_HOME"
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" 'platforms;android-35' 'build-tools;35.0.0'
           ./gradlew --no-daemon :app:assembleRelease
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk "dist/LuLeMa-v${VERSION}.apk"
