@@ -57,15 +57,23 @@ class ComposeFlowTest {
   rule.onNodeWithTag("report-count").assert(hasAnyDescendant(hasText("1 次")))
   rule.onNodeWithTag("report-MONTH").performClick()
   rule.onNodeWithTag("report-MONTH").assertIsSelected()
+  rule.waitUntil(20000) {rule.onAllNodesWithText("61.0 分钟").fetchSemanticsNodes().isNotEmpty()}
+  rule.onNodeWithText("61.0 分钟").performScrollTo().assertExists()
   screenshot("report-month")
-  rule.onNodeWithTag("report-YEAR").performClick()
+  rule.onNodeWithTag("report-YEAR").performScrollTo().performClick()
   rule.onNodeWithTag("report-YEAR").assertIsSelected()
+  rule.waitUntil(20000) {rule.onAllNodesWithText("61.0 分钟").fetchSemanticsNodes().isNotEmpty()}
+  rule.onNodeWithText("61.0 分钟").performScrollTo().assertExists()
   screenshot("report-year")
   checkpoint("reports-verified")
   val repo=(rule.activity.application as LuLeMaApplication).repository
   runBlocking {repo.save(Entry())}
   rule.waitUntil(20000) {rule.onAllNodes(hasTestTag("report-count") and hasAnyDescendant(hasText("2 次"))).fetchSemanticsNodes().isNotEmpty()}
+  rule.onNodeWithText("61.0 分钟").assertExists()
+  rule.onNodeWithText("1.234 mL").performScrollTo().assertExists()
+  screenshot("report-fields")
   rule.onNodeWithTag("nav-achievements").performClick()
+  screenshot("achievements-overview")
   rule.onNodeWithText("二连击破").performScrollTo().assertExists()
   assertTrue(runBlocking {"daily_2" in repo.preferences().achievements})
   screenshot("achievements")

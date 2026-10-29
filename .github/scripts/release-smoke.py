@@ -84,8 +84,8 @@ else:
 for title, expected in [("日历","返回今天"),("统计","历史档案"),("成就","成就中心"),("我的","个人设置"),("首页","周期报告")]:
     find(title, True)
     scroll_find(expected)
-find("月报",True)
-find("年报",True)
-find(f"{run(adb,'shell','date','+%Y').strip()} 年度报告")
+scroll_find("月报",True)
+scroll_find("年报",True)
+scroll_find(f"{run(adb,'shell','date','+%Y').strip()} 年度报告")
 assert run(adb,"shell","pidof","com.lulema.app").strip()
 print("R8 APK verified: signature, package/version/API 26, offline permissions, install, launch, create/detail, five navigation pages and report switching passed.")

@@ -87,7 +87,7 @@ internal fun StatsPage(entries:List<Entry>,today:LocalDate,mondayFirst:Boolean,y
    LaunchedEffect(values) {shown=true}
    val progress by animateFloatAsState(if(shown)1f else 0f,label="chart")
    val max=(values.maxOrNull()?:1f).coerceAtLeast(1f)
-   Text("最高 ${max.toInt()} $unit · 合计 ${values.sum().toLong()} $unit",style=MaterialTheme.typography.labelMedium)
+   Text("最高 ${max.toInt()} $unit · 合计 ${values.sumOf {it.toLong()}} $unit",style=MaterialTheme.typography.labelMedium)
    Canvas(Modifier.fillMaxWidth().height(120.dp).semantics {contentDescription="$title：${values.joinToString {it.toInt().toString()}} $unit"}) {
     val step=size.width/values.size
     values.forEachIndexed {i,v->

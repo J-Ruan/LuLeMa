@@ -211,7 +211,7 @@ private fun timeLabel(e:Entry) = e.minute?.let {"%02d:%02d".format(it/60,it%60)}
       val chosen=day?.toEpochDay()==selectedDay
       Box(Modifier.weight(1f).heightIn(min=52.dp).then(if(day!=null && day<=today) Modifier.clickable {selectedDay=day.toEpochDay()} else Modifier),contentAlignment=Alignment.Center) {
        if(day!=null) Column(horizontalAlignment=Alignment.CenterHorizontally) {
-        Surface(shape=RoundedCornerShape(12.dp),color=if(chosen)MaterialTheme.colorScheme.primary else Color.Transparent) {Text("${day.dayOfMonth}",Modifier.padding(8.dp),color=if(chosen)MaterialTheme.colorScheme.onPrimary else if(day>today)MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)}
+        Surface(shape=RoundedCornerShape(12.dp),color=if(chosen)MaterialTheme.colorScheme.primary else Color.Transparent) {Text("${day.dayOfMonth}",Modifier.padding(horizontal=2.dp,vertical=8.dp),fontSize=14.sp,maxLines=1,softWrap=false,color=if(chosen)MaterialTheme.colorScheme.onPrimary else if(day>today)MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)}
         if(marks.containsKey(day.toEpochDay()))Text("•",fontSize=10.sp,modifier=Modifier.semantics {contentDescription="${day} 记录 ${marks[day.toEpochDay()]} 次"})
        }
       }
