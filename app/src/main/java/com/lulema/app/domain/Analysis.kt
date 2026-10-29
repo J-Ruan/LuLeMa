@@ -3,12 +3,17 @@ package com.lulema.app.domain
 import com.lulema.app.data.Entry
 import java.time.LocalDate
 import java.time.YearMonth
+import java.math.BigDecimal
 
 object Analysis {
- data class Summary(val count: Int, val minutes: Long, val average: Double, val latest: Long?)
+ data class Summary(val count: Int, val minutes: Long, val average: Double, val latest: Long?, val measuredCount: Int, val missingDurationCount: Int, val handCountTotal: Long?, val volumeTotal: BigDecimal?)
  fun summary(entries: List<Entry>): Summary {
-  val total=entries.sumOf { it.duration.toLong() }
-  return Summary(entries.size,total,if(entries.isEmpty()) 0.0 else total.toDouble()/entries.size, entries.maxOfOrNull { it.day })
+  val measured=entries.filter { it.duration > 0 }
+  val total=measured.sumOf { it.duration.toLong() }
+  val hands=entries.mapNotNull { it.handCount }
+  val volumes=entries.mapNotNull { it.volumeMl }
+  return Summary(entries.size,total,if(measured.isEmpty()) 0.0 else total.toDouble()/measured.size, entries.maxOfOrNull { it.day }, measured.size, entries.size-measured.size,
+   hands.takeIf { it.isNotEmpty() }?.sumOf { it.toLong() }, volumes.takeIf { it.isNotEmpty() }?.fold(BigDecimal.ZERO) { sum, value -> sum + BigDecimal.valueOf(value) })
  }
  fun month(entries: List<Entry>, month: YearMonth) = entries.filter { it.day in month.atDay(1).toEpochDay()..month.atEndOfMonth().toEpochDay() }
  fun year(entries: List<Entry>, year: Int) = entries.filter { LocalDate.ofEpochDay(it.day).year==year }
@@ -38,5 +43,13 @@ val Achievements=listOf(
  Achievement("dark","暗夜研究员","研究所终于关灯了。","开启深色模式"),
  Achievement("secret","神秘观察员","录取通知书没有编制。","连续点击首页标题五次"),
  Achievement("settings","设置研究生","设置页面已被你研究明白。","修改三项不同设置"),
- Achievement("year","宇宙档案馆长","年度报告很严谨，宇宙暂不置评。","查看年度统计")
+ Achievement("year","宇宙档案馆长","年度报告很严谨，宇宙暂不置评。","查看年度统计"),
+ Achievement("daily_2","二连击破","同一天的两份档案，已经各就各位。","同一自然日累计记录达到 2 次"),
+ Achievement("daily_3","三连决胜","三份材料齐了，研究所开始整理。","同一自然日累计记录达到 3 次"),
+ Achievement("daily_4","四连超凡","档案柜多了四个坐标。","同一自然日累计记录达到 4 次"),
+ Achievement("daily_5","五连绝世","五份档案，各有自己的编号。","同一自然日累计记录达到 5 次"),
+ Achievement("daily_over_5","天下无双","这一页的材料，研究所认真归档。","同一自然日累计记录达到 6 次及以上"),
+ Achievement("streak_7","弹无虚发","连续七个日期，日历都留了记号。","至少连续 7 个自然日每天都有记录"),
+ Achievement("duration_under_3","闪电收工","极速档案入库，研究所保持中立。","单次已填写时长大于 0 且小于 3 分钟"),
+ Achievement("duration_over_60","枪王","长篇档案收好，记得照顾自己。","单次已填写时长大于 60 分钟")
 )

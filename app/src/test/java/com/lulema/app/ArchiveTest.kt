@@ -21,7 +21,7 @@ class ArchiveTest {
  @Test fun monthlyBoundariesAndLeapYear() {val data=listOf(entry(day.minusDays(1)),entry(),entry(day.plusDays(1)));assertEquals(2,Analysis.month(data,YearMonth.of(2024,2)).size);assertEquals(1,Analysis.month(data,YearMonth.of(2024,3)).size)}
  @Test fun annualBoundaries() {val data=listOf(entry(LocalDate.of(2023,12,31)),entry(LocalDate.of(2024,1,1)),entry(LocalDate.of(2024,12,31)),entry(LocalDate.of(2025,1,1)));assertEquals(2,Analysis.year(data,2024).size)}
  @Test fun emptyDatabaseStatistics() {val s=Analysis.summary(emptyList());assertEquals(0,s.count);assertEquals(0L,s.minutes);assertEquals(0.0,s.average,0.0);assertNull(s.latest);assertTrue(Analysis.daily(emptyList(),day,30).all {it.second==0})}
- @Test fun totalsUseLongAndAverageIncludesUnspecifiedDuration() {val s=Analysis.summary(listOf(entry(duration=0),entry(duration=60)));assertEquals(60L,s.minutes);assertEquals(30.0,s.average,0.0)}
+ @Test fun totalsUseLongAndAverageExcludesUnspecifiedDuration() {val s=Analysis.summary(listOf(entry(duration=0),entry(duration=60)));assertEquals(60L,s.minutes);assertEquals(60.0,s.average,0.0);assertEquals(1,s.missingDurationCount);assertEquals(1,s.measuredCount)}
  @Test fun calendarHandlesWeekStartLeapAndYearRollover() {
   val feb=Analysis.calendar(YearMonth.of(2024,2),true);assertEquals(29,feb.filterNotNull().size);assertEquals(day,feb.filterNotNull().last());assertEquals(0,feb.size%7)
   assertEquals(LocalDate.of(2023,1,1),Analysis.calendar(YearMonth.of(2023,1),false).first())
@@ -51,7 +51,7 @@ class ArchiveTest {
  @Test fun missingVersionOrRecordIdentityMustNotInventData() {
   val original=backup()
   val encoded=BackupCodec.encode(original).toString(Charsets.UTF_8)
-  assertThrows(Exception::class.java) {BackupCodec.decode(encoded.replace("\"formatVersion\":1,", "").toByteArray())}
+  assertThrows(Exception::class.java) {BackupCodec.decode(encoded.replace("\"formatVersion\":2,", "").toByteArray())}
   val e=original.records.single()
   assertThrows(Exception::class.java) {BackupCodec.decode(encoded.replace("\"id\":\"${e.id}\",", "").toByteArray())}
   assertThrows(Exception::class.java) {BackupCodec.decode("{\"formatVersion\":1,\"exportedAt\":1,\"records\":[{}],\"settings\":{}}".toByteArray())}
@@ -64,6 +64,6 @@ class ArchiveTest {
   assertThrows(IllegalArgumentException::class.java) {BackupCodec.decode(ByteArray(BackupCodec.MAX_BYTES+1))}
   assertThrows(IllegalArgumentException::class.java) {BackupCodec.encode(backup(),"short".toCharArray())}
  }
- @Test fun achievementsNeverDependOnRecordFrequency() {val p=Preferences().unlock("stats");assertEquals(p,p.unlock("stats"));assertEquals(1,p.achievements.size);assertEquals(9,Achievements.size)}
+ @Test fun existingAchievementKeysArePreservedAndUnlockIsIdempotent() {val p=Preferences().unlock("stats");assertEquals(p,p.unlock("stats"));assertEquals(1,p.achievements.size);assertEquals(17,Achievements.size);assertTrue(Achievements.map {it.key}.containsAll(listOf("first","duration","history","stats","backup","dark","secret","settings","year")))}
  @Test fun settingsValidationPreventsHighFrequencyReminders() {assertThrows(IllegalArgumentException::class.java) {Preferences(reminderDays=1).validate()};Preferences(reminderDays=7).validate();Preferences(reminderDays=90).validate()}
 }

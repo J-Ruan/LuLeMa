@@ -11,8 +11,34 @@ concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 env:
-  VERSION: 0.1.0
+  VERSION: 0.2.0
 jobs:
+  signing-readiness:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    outputs:
+      ready: ${{ steps.keys.outputs.ready }}
+    steps:
+      - name: Check presence of signing secrets without exposing values
+        id: keys
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set +x
+          missing=()
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then missing+=("$name"); fi
+          done
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+            echo 'Formal signing secrets: all four are configured. Signed candidate validation is required.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            printf 'Formal signing unavailable. Missing secret names: %s\n' "${missing[*]}" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -28,13 +54,14 @@ jobs:
           chmod +x gradlew
           test -n "$ANDROID_HOME"
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" 'platforms;android-35' 'build-tools;35.0.0'
-      - name: Unit tests, Lint, Debug APK and device test APK
-        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Unit tests, Lint, Debug, R8 Release and device test APK
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease :app:assembleDebugAndroidTest
       - name: Name APK and verify signature
         run: |
           mkdir -p dist
           cp app/build/outputs/apk/debug/app-debug.apk "dist/LuLeMa-v${VERSION}-debug.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "dist/LuLeMa-v${VERSION}-debug.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "dist/LuLeMa-v${VERSION}-debug.apk" | head -1 | grep -F "versionCode='2' versionName='$VERSION'"
           cd dist && sha256sum *.apk > SHA256SUMS
       - uses: actions/upload-artifact@v7
         with:
@@ -61,42 +88,14 @@ jobs:
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v6
       - name: Configure accelerated emulator
-        run: |
-          set -Eeuo pipefail
-          trap 'echo "Failed command: $BASH_COMMAND" >> "$GITHUB_STEP_SUMMARY"; tail -60 emulator.log >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true' ERR
-          export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
-          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libpulse0 libasound2t64 libnss3 libx11-xcb1 libxcb-cursor0 libxcomposite1 libxcursor1 libxi6 libxtst6 libvulkan1
-          sudo chmod 666 /dev/kvm
-          export ANDROID_AVD_HOME="$RUNNER_TEMP/lulema-avd"
-          mkdir -p "$ANDROID_AVD_HOME"
-          test -n "$ANDROID_HOME"
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools' 'emulator' 'system-images;android-30;default;x86_64'
-          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --force --name ci --path "$ANDROID_AVD_HOME/ci.avd" --package 'system-images;android-30;default;x86_64'
-          test -s "$ANDROID_AVD_HOME/ci.avd/config.ini"
-          printf 'avd.ini.encoding=UTF-8\npath=%s\ntarget=android-30\n' "$ANDROID_AVD_HOME/ci.avd" > "$ANDROID_AVD_HOME/ci.ini"
-          "$ANDROID_HOME/emulator/emulator" -avd ci -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > emulator.log 2>&1 &
-          emulator_pid=$!
-          sleep 3
-          if ! kill -0 "$emulator_pid" 2>/dev/null; then
-            cat emulator.log >> "$GITHUB_STEP_SUMMARY"
-            tail -20 emulator.log | while IFS= read -r line; do echo "::error::${line//%/%25}"; done
-            exit 1
-          fi
-          timeout 120 adb wait-for-device
-          for i in $(seq 1 180); do
-            if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then break; fi
-            sleep 2
-          done
-          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1
-          adb shell input keyevent 82
-          adb shell svc wifi disable
-          adb shell svc data disable
-          adb shell settings put global window_animation_scale 0
-          adb shell settings put global transition_animation_scale 0
-          adb shell settings put global animator_duration_scale 0
+        run: bash .github/scripts/start-emulator.sh
       - run: chmod +x gradlew && ./gradlew --no-daemon :app:connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
+      - name: R8 smoke with a development signature, not a formal distribution APK
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon :app:assembleRelease
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$HOME/.android/debug.keystore" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out "$RUNNER_TEMP/r8-smoke.apk" app/build/outputs/apk/release/app-release-unsigned.apk
+          python3 .github/scripts/release-smoke.py "$RUNNER_TEMP/r8-smoke.apk"
       - name: Collect device diagnostics
         if: always()
         run: |
@@ -117,8 +116,8 @@ jobs:
             device-logcat.txt
             screenshots/
   release:
-    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-debug.')
-    needs: [build, device-tests]
+    if: (github.ref == 'refs/heads/main' || (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-debug.'))) && needs.signing-readiness.outputs.ready == 'true'
+    needs: [build, device-tests, signing-readiness]
     permissions:
       contents: write
     runs-on: ubuntu-24.04
@@ -169,16 +168,26 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "dist/LuLeMa-v${VERSION}.apk"
           badging=$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "dist/LuLeMa-v${VERSION}.apk")
           echo "$badging" | head -1 | grep -F "versionName='$VERSION'"
-          test "$GITHUB_REF_NAME" = "v$VERSION"
+          echo "$badging" | head -1 | grep -F "name='com.lulema.app' versionCode='2'"
+          echo "$badging" | grep -F "sdkVersion:'26'"
+          if echo "$badging" | grep -q 'android.permission.INTERNET'; then exit 1; fi
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then test "$GITHUB_REF_NAME" = "v$VERSION"; fi
           (cd dist && sha256sum *.apk > SHA256SUMS)
-          printf '# 撸了吗 %s\n\n发布日期：%s（Asia/Shanghai）\n\n人类迷惑行为研究所正式营业。\n\n- 离线档案、月历和统计\n- 成就、低频中性提醒和深色模式\n- 明文或 AES-GCM 密码备份、事务导入\n\n首次安装前请核对 SHA256SUMS。升级前请备份。通知可能被系统延迟；不提供医学诊断。\n' "$GITHUB_REF_NAME" "$(TZ=Asia/Shanghai date +%F)" > dist/RELEASE_NOTES.md
+          cp docs/RELEASE_NOTES.md dist/RELEASE_NOTES.md
+      - name: Start a dedicated emulator for the actual signed Release APK
+        if: steps.sign.outcome == 'success'
+        run: bash .github/scripts/start-emulator.sh
+      - name: Install and smoke-test the actual formal signing candidate
+        id: smoke
+        if: steps.sign.outcome == 'success'
+        run: python3 .github/scripts/release-smoke.py "dist/LuLeMa-v${VERSION}.apk"
       - uses: actions/upload-artifact@v7
-        if: always() && steps.sign.outcome == 'success'
+        if: steps.smoke.outcome == 'success'
         with:
           name: LuLeMa-v${{ env.VERSION }}-release
           path: dist/
       - name: Publish GitHub Release
-        if: steps.sign.outcome == 'success'
+        if: steps.smoke.outcome == 'success' && startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" dist/*.apk dist/SHA256SUMS --verify-tag --title "撸了吗 $GITHUB_REF_NAME — 人类迷惑行为研究所正式营业" --notes-file dist/RELEASE_NOTES.md

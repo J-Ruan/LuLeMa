@@ -14,6 +14,7 @@ keystore.properties
 *.lulema
 *.apk
 .DS_Store
+__pycache__/
 
 backups/
 *.backup.json

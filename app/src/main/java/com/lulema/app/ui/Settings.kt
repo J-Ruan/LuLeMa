@@ -34,11 +34,11 @@ import java.time.*
  var info by remember {mutableStateOf("")}
  val exportLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) {uri->
   val secret=vm.pendingBackupPassword;vm.pendingBackupPassword=null
-  if(uri!=null && secret!=null)vm.export(uri,secret)
+  if(uri!=null && secret!=null)vm.export(uri,secret) else vm.cancelled()
  }
  val importLauncher=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri->
   val secret=vm.pendingBackupPassword;vm.pendingBackupPassword=null
-  if(uri!=null && secret!=null)vm.inspect(uri,secret)
+  if(uri!=null && secret!=null)vm.inspect(uri,secret) else vm.cancelled()
  }
  val permission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {granted->
   if(granted)vm.setting("reminders") {it.copy(reminders=true)} else info="通知权限未授予，提醒保持关闭。可在系统设置中开启。"
@@ -62,12 +62,12 @@ import java.time.*
    OutlinedTextField(value=interval,onValueChange={if(it.length<=2 && it.all(Char::isDigit))interval=it},label={Text("间隔天数 / 7–90 天（7 天为每周）")},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number),singleLine=true,modifier=Modifier.fillMaxWidth())
    TextButton(enabled=interval.toIntOrNull() in 7..90,onClick={vm.setting("reminderInterval") {it.copy(reminderDays=interval.toInt())}}) {Text("保存频率")}
    Text("预览：档案馆提醒\n重要数据记得备份。按自己的节奏生活。",color=Color.Gray)
-   Text("锁屏默认仅显示中性通知。系统可能延迟投递；不是精确闹钟。跨时区或夏令时变化后，可重新保存时间调整提醒。",style=MaterialTheme.typography.bodySmall,color=Color.Gray)
+   Text("锁屏默认仅显示中性通知。系统可能延迟投递；不是精确闹钟。跨时区或夏令时变化后，可调整提醒时间，或关闭后重新开启。",style=MaterialTheme.typography.bodySmall,color=Color.Gray)
    if(Build.VERSION.SDK_INT>=33 && p.reminders && ContextCompat.checkSelfPermission(context,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)Text("系统通知权限已关闭，请在系统设置中恢复或关闭此开关。",color=MaterialTheme.colorScheme.error)
   }
   Tile {
    Section("数据与隐私")
-   Text("记录只在这台设备。系统自动备份已关闭，卸载前请主动导出。",color=Color.Gray)
+   Text("记录、手部运动次数、出货量、手填地点和勋章只在本机数据库。无网络和定位权限，系统自动备份已关闭；卸载前请主动导出。",color=Color.Gray)
    Button(enabled=!busy,onClick={password="";encrypted=true;dialog="export"},modifier=Modifier.fillMaxWidth()) {Text("导出备份")}
    OutlinedButton(enabled=!busy,onClick={password="";dialog="import"},modifier=Modifier.fillMaxWidth()) {Text("导入备份")}
    if(busy) {LinearProgressIndicator(Modifier.fillMaxWidth());Text("正在处理备份，请稍候")}
@@ -92,7 +92,7 @@ import java.time.*
      Text("加密备份请输入至少 8 位密码。明文导入可留空。密码无法找回。",color=Color.Gray)
      OutlinedTextField(value=password,onValueChange={if(it.length<=128)password=it},label={Text("备份密码")},visualTransformation=PasswordVisualTransformation(),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Password),singleLine=true)
     }
-    if(exporting && !encrypted)Text("注意：明文文件包含私密记录、备注、设置和成就。选择安全位置并妥善保管。",color=MaterialTheme.colorScheme.error)
+    if(exporting && !encrypted)Text("注意：明文文件包含私密记录、时长、手部运动次数、出货量、地点、备注、设置和成就。选择安全位置并妥善保管。",color=MaterialTheme.colorScheme.error)
     if(!exporting)Text("先验证并预览文件，再选择合并或覆盖。无效文件不会改变原有数据。")
    }
   },dismissButton={TextButton(onClick={dialog=null;password=""}) {Text("取消")}},confirmButton={
@@ -104,17 +104,4 @@ import java.time.*
   })
  }
  if(info.isNotEmpty())AlertDialog(onDismissRequest={info=""},text={Text(info)},confirmButton={TextButton(onClick={info=""}) {Text("知道了")}})
-}
-@Composable internal fun AchievementsPage(p:Preferences,back:()->Unit) {
- Page("成就中心","每个小发现都算数，频率不算成绩。") {
-  TextButton(onClick=back) {Text("返回我的")}
-  Achievements.forEach {a->
-   Tile {
-    Section("${if(a.key in p.achievements)"✧" else "◇"}  ${a.name}")
-    Text(a.description)
-    Text(a.condition,color=Color.Gray)
-    Text(p.achievements[a.key]?.let {"已解锁 · ${Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()}"}?:"尚未解锁",style=MaterialTheme.typography.labelMedium)
-   }
-  }
- }
 }

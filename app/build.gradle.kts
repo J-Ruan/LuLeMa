@@ -12,8 +12,8 @@ android {
   applicationId = "com.lulema.app"
   minSdk = 26
   targetSdk = 35
-  versionCode = 1
-  versionName = "0.1.0"
+  versionCode = 2
+  versionName = "0.2.0"
   testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
  }
  val signingPath = providers.environmentVariable("KEYSTORE_FILE").orNull
@@ -33,6 +33,7 @@ android {
  buildFeatures { compose = true; buildConfig = true }
  packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
  testOptions { unitTests.isReturnDefaultValues = true }
+ sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
 }
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {

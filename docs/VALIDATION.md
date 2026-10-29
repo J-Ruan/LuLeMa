@@ -1,90 +1,44 @@
-# v0.1.0 验证报告
+# v0.2.0 验证与交付
 
-日期：2026-10-28。所有测试数据均为人工构造，截图来自真实 Android 模拟器运行。
+日期：2026-10-29（Asia/Shanghai）。全部测试数据为人工构造。历史 v0.1.0 的结果归档于 [旧版验证报告](history/VALIDATION-v0.1.0.md)，不能混作本次结果。
 
-## 最终本地验收
+## 本地验证
 
-实际执行并成功退出（`BUILD SUCCESSFUL in 4m 11s`）：
+已执行：
 
 ```bash
-./gradlew --no-daemon \
-  :app:testDebugUnitTest :app:lintDebug :app:assembleDebug \
-  :app:assembleRelease :app:connectedDebugAndroidTest \
-  -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
+./gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease :app:assembleDebugAndroidTest
 ```
 
-| 检查 | 结果 |
-|---|---|
-| Kotlin JVM 单元测试 | 19 项通过，0 失败、0 跳过 |
-| API 30 设备测试 | 3 项通过，0 失败、0 跳过 |
-| Android Lint | 0 错误，2 项警告 |
-| Debug APK | 实际构建、签名验证、安装、启动和 UI 流程通过 |
-| Release / R8 构建 | 成功；未提供正式签名，所以输出 unsigned，不用于安装或发布 |
-| 可复用安装脚本 | 在当前实例实际执行成功，冻结 Wrapper 校验值和工具校验值 |
+- JVM 单元测试 42 项通过，0 失败、0 跳过。
+- Lint 0 错误、16 警告：14 项现有依赖的新版本提示，以及标准 v26 自适应图标目录、中文完整矢量轮廓两项原有警告。保持当前兼容依赖，未关闭检查或删除断言。
+- Debug、AndroidTest 和 R8 Release 构建成功。未向本地提供正式签名，Release 输出 unsigned，仅作构建验证，不能作为可安装的正式版。
+- 工作流 YAML、发布冒烟脚本 Python 语法与 git diff --check 通过。
 
-单元测试包含输入验证、空档案、同日多条、月度 / 年度统计、时长、闰年、星期起始、日期跨时区、明文 / 加密备份、错误密码、篡改、损坏 / 超大 / 过深 JSON、版本与必填身份字段缺失、重复 ID、提醒频率和成就幂等性。
+API 30 / Android 11、320×640、160 dpi 的专用模拟器中，真实数据库迁移、Room CRUD / 新字段持久化 / 合并覆盖回滚、成就补算、实际加密文件导出预览恢复及篡改拒绝、WorkManager 任务 UUID 保持等 6 项后端设备测试已经通过。
 
-设备测试包括：
+完整 Compose 流程当前仍在验证。此实例没有 /dev/kvm，TCG 启动时出现 System UI、电话、蓝牙和 system 进程的无响应对话框；处理启动对话框后，交互测试仍遇到输入派发超时。已添加仅含阶段名称的测试日志，保留全部断言，并将 R8 构建与交互分开运行。不得将不完整设备轮次描述为通过，最终以硬件加速 CI 的真实结果补充本报告。
 
-1. Compose 录入时长和虚构备注，重建 Activity 后验证表单仍在，保存记录，确认首页更新，切换日历、统计和我的；切换深色模式并重建 Activity 验证主题保留；保存四页及深色模式共五张真实截图。
-2. Room 新增、编辑、删除、同日多条、历史日期，关闭并重开数据库验证记录、主题、昵称与成就持久化。
-3. 按 ID 合并、旧版本不覆盖新记录、无效覆盖不改原数据、完整覆盖时关闭提醒，以及清空设置和记录。
+## 实现与验证范围
 
-Lint 警告为 `ObsoleteSdkInt`（自适应图标使用标准 v26 目录）和 `VectorPath`（保留完整中文笔画）。保留真实“撸”字轮廓与兼容目录，没有通过关闭检查来隐藏警告。
+- 单元测试覆盖单日 2–6 次同时解锁、UUID 幂等、历史连续日期 / 中断 / 跨年闰日、时长点评及 0/3/60 边界、解锁后不撤销。
+- 新字段覆盖非负整数 / 上限、小数 / NaN / Infinity / 精度 / 上限、地点长度、空值与真实 0；合计使用 Long 和 BigDecimal。
+- 报告覆盖自然周起始、跨年周、闰月 / 闰年、截止今天、空数据、有效时长平均值、地点分组与按本地日期归属的新勋章。
+- 备份覆盖真实 v1 缺失字段恢复为空、新格式明文 / AES-GCM 往返、密码 / 篡改 / 超限 / 深度 / 重复 ID / 缺身份字段及异常未来时间戳。
+- MigrationTestHelper 用已提交的 schema 1 创建旧数据库，插入旧记录、设置和解锁时间，显式迁移至 2，验证三列为 NULL、原数据及升级后 CRUD。应用注册同一迁移，不使用破坏性回退。
+- Compose 流程保留输入、重建恢复、详情点评、编辑、新字段回显、报告切换和刷新、独立勋章墙、五页导航、深色重建和删除检查；当前不能宣称完整通过。
 
-## APK 核验
+## 发布门槛与实际状态
 
-- 文件名：`LuLeMa-v0.1.0-debug.apk`
-- 构建类型：Debug，开发签名，APK Signature Scheme v2 验证通过。
-- 大小：18,230,964 字节，约 17.39 MiB。
-- applicationId：`com.lulema.app`
-- versionName / versionCode：`0.1.0` / `1`
-- minSdk / targetSdk：`26` / `35`
-- App 标签：`撸了吗`
-- 无 INTERNET 权限，无广告 / 追踪 SDK。
-- SHA-256：`203c267b08a06253d613572cb38c65ae10bce1523d0aab37034e0967d54e4cb0`
+本次代码版本为 0.2.0 / versionCode 2，包名 com.lulema.app，minSdk 26、targetSdk 35。当前只确认源码实现及上述本地结果；v0.2.0 尚未发布。
 
-以上 SHA-256 仅对应本任务本地交付的 APK。CI 的 Debug 签名密钥可能不同，请使用 Artifact 内附的 SHA256SUMS 核对该次下载。
+本地 GitHub 凭据可以读写仓库，但列出 Actions Secrets 的接口返回 403。工作流新增 signing-readiness，仅在仓库执行器中检查 KEYSTORE_BASE64、KEYSTORE_PASSWORD、KEY_ALIAS、KEY_PASSWORD 是否齐全，输出只包含缺失名称，不输出秘密值。不能根据环境未绑定本地密钥而推断仓库 Secrets 缺失。
 
-本地校验命令：`apksigner verify --verbose`、`aapt dump badging`、`sha256sum`。实际安装成功；四页测试在禁用模拟器 Wi-Fi / 移动数据时执行。
+仅在 main 的测试及实际正式签名候选包的签名、安装、启动和关键流程通过后创建 v0.2.0；缺签名则仅允许明确标记的 v0.2.0-debug.1 预发布。发布后必须重新下载真实附件核对 SHA-256 和签名，再记录链接与校验值。
 
-## 实际系统文件选择器检查
+## 兼容性与未覆盖范围
 
-在仅含虚构数据的 API 30 测试模拟器中，通过真实 DocumentsUI 选择 Downloads 位置，成功导出 820 字节加密备份。文件只含 encryptedVersion、salt、iv、ciphertext，不含明文 records。额外使用标准 AES-GCM 实现独立认证解密，得到 1 条记录、15 分钟。
-
-随后通过 App 的系统文件选择器选回该文件，输入虚构测试密码，实际预览显示 1 条记录、15 分钟；选择合并后，统计显示 2 条不同 UUID 的记录，符合保留本机与历史备份的合并语义。此检查与 JUnit 的 19 + 3 项计数分开记录，没有把手动检查冒充自动化用例。
-
-## 历史失败与修复
-
-- 首轮编译有通知资源 `R` 的导入歧义，添加显式导入后重跑通过。
-- 首轮软件仿真尚未稳定，出现系统 UI ANR 和输入派发超时，整轮设备测试中断，未将未执行的用例计为通过。关闭模拟器网络后台活动、等待系统稳定后，先分别通过数据库 / UI 测试，再整轮通过 3 项测试。
-- 截图等待一度误匹配首页语录，超时后改成精确匹配短暂 Snackbar；最终整轮截图和测试通过。没有删除断言或测试。
-
-## GitHub 与自动构建
-
-公开仓库：[J-Ruan/LuLeMa](https://github.com/J-Ruan/LuLeMa)。实际 HTTPS 推送已验证；仓库页面元数据显示 Public。
-
-[自动构建记录](https://github.com/J-Ruan/LuLeMa/actions)。远端 `build` job 已实际通过单元测试、Lint、Debug / AndroidTest 构建、签名核验和 Artifact 上传，例如 [运行 #3](https://github.com/J-Ruan/LuLeMa/actions/runs/40662260498) 的 build job。后续取消针对卡住的设备 job，不代表 build 未执行。
-
-首轮远端第三方 SDK 安装失败后，改用 Ubuntu 24.04 预装 SDK 和官方当前维护 Actions。远端设备 job 曾卡在模拟器启动，后续版本明确 SDK / adb 路径、加入有界等待和日志诊断。已定位并修复 AVD 创建与启动目录不一致的问题：[运行 #7](https://github.com/J-Ruan/LuLeMa/actions/runs/40666922782) 的 build 和 device-tests 两个 job 均实际成功，完整流水线用时 4m 21s。[运行 #8](https://github.com/J-Ruan/LuLeMa/actions/runs/40668601917) 也已完整通过，包含最终深色系统栏及主题重建测试。
-
-## 尚未验证 / 发布条件
-
-- 未在真实手机或 Android 8 / Android 13+ 上执行完整回归；特别是通知运行时授权、OEM 省电策略、SAF 各文件提供器与大字体需要真机检查。
-- API 30 的系统 DocumentsUI 加密导出、密码导入预览和合并已实际验证；其他 OEM / 云盘文件提供器尚未回归。
-- 未配置正式 Keystore 和四项签名 Secrets，因此没有正式签名稳定版。已通过 GitHub Actions 发布 Debug 预发布 `v0.1.0-debug.1`。
-- GitHub API 在当前环境返回 Forbidden；Git 推送及公开网页读取可用，未设置仓库 Topics。维护者可按发布文档手动设置。
-- 已保存云环境 `install_script` / `start_skill` 草稿。保存不代表发布快照或新任务恢复已验证；请在环境设置中检查并保存后发布。
-
-## 已发布的 Debug 预发布
-
-[发布页面](https://github.com/J-Ruan/LuLeMa/releases/tag/v0.1.0-debug.1) · [APK 直接下载](https://github.com/J-Ruan/LuLeMa/releases/download/v0.1.0-debug.1/LuLeMa-v0.1.0-debug.apk)
-
-发布工作流 [40673859448](https://github.com/J-Ruan/LuLeMa/actions/runs/40673859448) 全部成功：build、device-tests 与 debug-prerelease 均通过，正式签名 release job 按设计跳过。
-
-已实际从公开 Release 重新下载 APK，核对附件 SHA256SUMS，并用 apksigner / aapt 验证签名和包信息：
-
-- 大小：18,210,133 字节。
-- SHA-256：`6458447ab22acae42112eec8c00eed31adde2d068900064f7048c22e5f05f8c7`。
-- applicationId `com.lulema.app`，versionName `0.1.0`，minSdk 26，APK Signature Scheme v2 有效，无 INTERNET 权限。
-- 公开页面正确标为 Pre-release / Debug 测试版。它使用 CI 开发签名，与此前本地交付包的签名及校验值可能不同，不能将两份 SHA-256 混用。
+- 旧记录以 duration=0 表示未填写，平均值和时长曲线统一忽略这些值；旧字段及九枚成就 key 不变，新列可空。
+- 旧 v1 明文 / 加密备份可导入；新导出格式 v2 不能给旧 v0.1.0 导入，升级前请保留旧备份。
+- 开发签名可能随机器改变，公开 v0.1.0 Debug 不承诺直接覆盖升级；正式签名与 Debug 不同，切换前先备份，必要时卸载旧包后恢复。
+- 尚未做 Android 8 真机、Android 13+ 通知授权、厂商省电策略及各 SAF 云盘提供器的完整回归；实际设备与 Release 验证将按执行结果补充，不以编译成功替代。

@@ -12,16 +12,19 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 @Serializable
-data class Backup(@Required val formatVersion: Int = 1, @Required val exportedAt: Long = System.currentTimeMillis(), val records: List<Entry>, val settings: Preferences) {
+data class Backup(@Required val formatVersion: Int = 2, @Required val exportedAt: Long = System.currentTimeMillis(), val records: List<Entry>, val settings: Preferences) {
  fun validate() {
-  require(formatVersion==1) { "不支持此备份版本" }
-  require(exportedAt > 0 && records.size <= 50000) { "备份大小或时间无效" }
+  require(formatVersion in 1..2) { "不支持此备份版本" }
+  TimestampPolicy.validate(exportedAt)
+  require(records.size <= 50000) { "备份大小无效" }
+  if(formatVersion == 1) require(records.all { it.handCount == null && it.volumeMl == null && it.location == null }) { "旧格式不支持新增字段" }
   require(records.map { it.id }.distinct().size==records.size) { "备份包含重复 ID" }
   records.forEach { it.validate() }; settings.validate()
  }
 }
 @Serializable
 private data class Encrypted(@Required val encryptedVersion:Int=1,val salt:String,val iv:String,val ciphertext:String)
+class BackupPasswordRequiredException : IllegalArgumentException("请输入至少 8 位的备份密码")
 object BackupCodec {
  const val MAX_BYTES=16*1024*1024
  private fun checkDepth(text:String) {
@@ -56,7 +59,7 @@ object BackupCodec {
   checkDepth(text)
   val envelope=try {ArchiveJson.decodeFromString<Encrypted>(text)} catch(_:kotlinx.serialization.SerializationException) {null}
   val plain=if(envelope!=null) {
-   require(password!=null && password.size>=8) { "请输入至少 8 位的备份密码" }
+   if(password==null || password.size<8) throw BackupPasswordRequiredException()
    val e=envelope
    require(e.encryptedVersion==1) { "不支持此加密版本" }
    val salt=Base64.getDecoder().decode(e.salt);val iv=Base64.getDecoder().decode(e.iv)

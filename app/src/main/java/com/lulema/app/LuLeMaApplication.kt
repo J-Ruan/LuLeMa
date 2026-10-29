@@ -5,6 +5,6 @@ import androidx.room.Room
 import com.lulema.app.data.*
 
 class LuLeMaApplication: Application() {
- val database by lazy { Room.databaseBuilder(this,ArchiveDatabase::class.java,"archive.db").build() }
+ val database by lazy { Room.databaseBuilder(this,ArchiveDatabase::class.java,"archive.db").addMigrations(ArchiveDatabase.MIGRATION_1_2).build() }
  val repository by lazy { ArchiveRepository(database) }
 }
