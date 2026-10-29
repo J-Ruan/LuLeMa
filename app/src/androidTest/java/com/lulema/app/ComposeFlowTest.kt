@@ -26,7 +26,9 @@ class ComposeFlowTest {
   checkpoint("duration-entered")
   rule.onNodeWithText("个人备注（可选，1000 字内）").performScrollTo().performTextInput("人工构造的 UI 测试档案")
   checkpoint("note-entered")
+  androidx.test.espresso.Espresso.closeSoftKeyboard()
   rule.onNodeWithTag("more-fields").performScrollTo().performClick()
+  rule.waitUntil(20000) {rule.onAllNodesWithTag("hand-count-input").fetchSemanticsNodes().isNotEmpty()}
   rule.onNodeWithTag("hand-count-input").performScrollTo().performTextInput("123")
   rule.onNodeWithTag("volume-input").performScrollTo().performTextInput("1.234")
   rule.onNodeWithTag("location-input").performScrollTo().performTextInput("虚构 UI 地点")
