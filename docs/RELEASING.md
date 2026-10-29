@@ -53,11 +53,15 @@ git push origin v0.2.0
 
 ## Debug 预发布
 
-历史 [v0.1.0-debug.1](https://github.com/J-Ruan/LuLeMa/releases/tag/v0.1.0-debug.1) 保留。本次若缺正式签名可使用新标签 `v0.2.0-debug.1`。`debug-prerelease` job 等待 build 与 device-tests（含 R8 冒烟）成功，下载本次构建已核验签名的 Artifact，检查 SHA256SUMS，再以 Pre-release 发布 Debug APK。无需正式签名 Secrets，也不会执行正式签名发布 job。实际发布状态和校验值见 VALIDATION，不把示例标签当成已发布。
+当前 [v0.2.0-debug.2](https://github.com/J-Ruan/LuLeMa/releases/tag/v0.2.0-debug.2) 已实际发布。[v0.1.0-debug.1](https://github.com/J-Ruan/LuLeMa/releases/tag/v0.1.0-debug.1) 继续保留。v0.2.0-debug.1 的首次门禁失败，只有 Tag，没有 Release，不覆盖此标签。
+
+`debug-prerelease` 必须等待 build 与 device-tests（含 R8 冒烟）成功，下载本次已核验签名的 Debug Artifact，检查 SHA256SUMS，再以 Pre-release 发布。它不使用正式签名 Secrets，也不执行正式签名发布。
+
+后续同版本测试使用新的后缀，例如：
 
 ```bash
-git tag -a v0.2.0-debug.1 -m 'LuLeMa v0.2.0 Debug prerelease 1'
-git push origin v0.2.0-debug.1
+git tag -a v0.2.0-debug.3 -m 'LuLeMa v0.2.0 Debug prerelease 3'
+git push origin v0.2.0-debug.3
 ```
 
-后续测试版递增 `debug.2` 等后缀，不覆盖旧标签或安装包。Debug 版本不承诺跨构建签名一致，升级前必须备份。
+不覆盖既有 Tag、Release 或安装包。Debug 开发签名不承诺跨构建一致，升级前必须备份。正式版请配置上文四项 Secrets，先验证 main 的正式签名候选包，再推送仍未使用的 v0.2.0 稳定标签。

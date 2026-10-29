@@ -22,29 +22,32 @@ Android 8.0+ · Kotlin · Jetpack Compose · 完全离线 · MIT
 
 ## APK 下载与安装
 
-当前源码为 v0.2.0，验证与发布状态见 [验证报告](docs/VALIDATION.md)。下面为仍保留的上一版公开测试包。
+**[直接下载 APK · v0.2.0-debug.2 测试预发布](https://github.com/J-Ruan/LuLeMa/releases/download/v0.2.0-debug.2/LuLeMa-v0.2.0-debug.apk)** · [发布页面](https://github.com/J-Ruan/LuLeMa/releases/tag/v0.2.0-debug.2) · [SHA256SUMS](https://github.com/J-Ruan/LuLeMa/releases/download/v0.2.0-debug.2/SHA256SUMS)
 
-**[直接下载 APK · v0.1.0-debug.1 测试版](https://github.com/J-Ruan/LuLeMa/releases/download/v0.1.0-debug.1/LuLeMa-v0.1.0-debug.apk)** · [发布说明与校验文件](https://github.com/J-Ruan/LuLeMa/releases/tag/v0.1.0-debug.1)
+公开下载无需登录 GitHub，支持 Android 8.0+。大小 18,275,669 字节。这是开发签名 Debug 预发布，正式签名稳定版仍缺四项签名 Secrets；不会将测试包冒充稳定版。
 
-公开下载无需登录 GitHub。这是开发签名的 Debug 预发布包，不是正式签名稳定版。
+SHA-256：`8c3530c7d445dd0749711540633b70098eab08237cbe7065405c683279d01c38`。
 
-- [Actions 构建与 Artifact](https://github.com/J-Ruan/LuLeMa/actions/workflows/android.yml)：成功构建后下载 `LuLeMa-v0.1.0-debug`，登录 GitHub 并解压 ZIP。
-- [全部 Releases](https://github.com/J-Ruan/LuLeMa/releases)：已提供 Debug 测试预发布；正式签名版本仍需配置正式密钥并推送稳定版本 Tag。
-- 当前环境实际构建 / 安装结果见 [验证报告](docs/VALIDATION.md)。不能把工作流配置存在等同于远端运行成功。
+[全部 Releases](https://github.com/J-Ruan/LuLeMa/releases) 保留旧版。[Actions](https://github.com/J-Ruan/LuLeMa/actions/workflows/android.yml) 也提供构建 Artifact。实际测试、迁移、R8 和大字体验证范围见 [验证报告](docs/VALIDATION.md)。
 
-安装：将 APK 下载到 Android 8.0 及以上手机 → 打开文件 → 按系统提示仅为所用文件管理器 / 浏览器允许“安装未知应用” → 安装 → 安装后可关闭该权限。无需注册或网络连接。
+安装：下载 APK → 按 Android 提示允许所用浏览器 / 文件管理器安装未知应用 → 安装。无需注册或联网。
 
-升级前先导出备份。不同签名无法覆盖安装，首次从 Debug 切换正式版时先备份、卸载旧版、安装再导入。密码遗失无法恢复加密备份。
+**升级前先导出并确认备份可恢复。** 不同 Debug 构建可能使用不同签名；提示签名冲突时，先备份，再卸载旧版、安装并导入。首次切换正式签名也通常需要此步骤。加密备份密码无法找回；新格式 v2 不能交给旧 v0.1.0 导入。
 
 ## 实际运行截图
 
-以下截图来自 API 30 模拟器中的真实 App，使用人工构造的数据。
+以下截图来自 API 30 模拟器的真实自动化流程，展示不同操作阶段，全部为人工构造的数据；大字体图来自最终 R8 代码的 320dp / 1.5 倍字体实测。
 
 | 首页 | 日历 | 统计 | 我的 |
 |---|---|---|---|
 | <img src="docs/screenshots/home.png" width="160" alt="首页"/> | <img src="docs/screenshots/calendar.png" width="160" alt="日历"/> | <img src="docs/screenshots/stats.png" width="160" alt="统计"/> | <img src="docs/screenshots/settings.png" width="160" alt="我的"/> |
 
 <img src="docs/screenshots/settings-dark.png" width="180" alt="深色模式及系统状态栏"/>
+
+| 成就中心 | 月报 | 新字段合计 | 大字体日历 |
+|---|---|---|---|
+| <img src="docs/screenshots/achievements-overview.png" width="160" alt="独立勋章墙"/> | <img src="docs/screenshots/report-month.png" width="160" alt="月报真实统计值"/> | <img src="docs/screenshots/report-fields.png" width="160" alt="区分记录次数与手部运动次数的报告"/> | <img src="docs/screenshots/large-font-calendar.png" width="160" alt="320dp、1.5 倍字体的单行日期"/> |
+
 
 测试与设备验证范围见 [验证报告](docs/VALIDATION.md)。
 
