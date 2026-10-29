@@ -48,26 +48,26 @@ import java.time.*
    Section("个人设置")
    OutlinedTextField(value=nickname,onValueChange={if(it.length<=30)nickname=it},label={Text("本地昵称")},singleLine=true,modifier=Modifier.fillMaxWidth())
    TextButton(enabled=nickname.isNotBlank(),onClick={vm.setting("nickname") {it.copy(nickname=nickname.trim())}}) {Text("保存昵称")}
-   Text("外观",color=Color.Gray)
+   Text("外观",color=MaterialTheme.colorScheme.onSurfaceVariant)
    FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {listOf("system" to "跟随系统","light" to "浅色","dark" to "深色").forEach {(key,label)->FilterChip(selected=p.theme==key,onClick={vm.setting("theme") {it.copy(theme=key)}},label={Text(label)})}}
    Row {Text("星期一作为一周开始",Modifier.weight(1f));Switch(checked=p.mondayFirst,onCheckedChange={value->vm.setting("weekStart") {it.copy(mondayFirst=value)}})}
   }
   Tile {
    Section("本地提醒")
-   Row {Column(Modifier.weight(1f)) {Text("启用低频提醒");Text("默认关闭 · 不要求你做任何事",color=Color.Gray,style=MaterialTheme.typography.bodySmall)};Switch(checked=p.reminders,onCheckedChange={enabled->
+   Row {Column(Modifier.weight(1f)) {Text("启用低频提醒");Text("默认关闭 · 不要求你做任何事",color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)};Switch(checked=p.reminders,onCheckedChange={enabled->
     if(enabled && Build.VERSION.SDK_INT>=33 && ContextCompat.checkSelfPermission(context,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)permission.launch(Manifest.permission.POST_NOTIFICATIONS)
     else vm.setting("reminders") {it.copy(reminders=enabled)}
    })}
    TextButton(onClick={TimePickerDialog(context,{_,h,m->vm.setting("reminderTime") {it.copy(reminderHour=h,reminderMinute=m)}},p.reminderHour,p.reminderMinute,true).show()}) {Text("提醒时间 · %02d:%02d".format(p.reminderHour,p.reminderMinute))}
    OutlinedTextField(value=interval,onValueChange={if(it.length<=2 && it.all(Char::isDigit))interval=it},label={Text("间隔天数 / 7–90 天（7 天为每周）")},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number),singleLine=true,modifier=Modifier.fillMaxWidth())
    TextButton(enabled=interval.toIntOrNull() in 7..90,onClick={vm.setting("reminderInterval") {it.copy(reminderDays=interval.toInt())}}) {Text("保存频率")}
-   Text("预览：档案馆提醒\n重要数据记得备份。按自己的节奏生活。",color=Color.Gray)
-   Text("锁屏默认仅显示中性通知。系统可能延迟投递；不是精确闹钟。跨时区或夏令时变化后，可调整提醒时间，或关闭后重新开启。",style=MaterialTheme.typography.bodySmall,color=Color.Gray)
+   Text("预览：档案馆提醒\n重要数据记得备份。按自己的节奏生活。",color=MaterialTheme.colorScheme.onSurfaceVariant)
+   Text("锁屏默认仅显示中性通知。系统可能延迟投递；不是精确闹钟。跨时区或夏令时变化后，可调整提醒时间，或关闭后重新开启。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
    if(Build.VERSION.SDK_INT>=33 && p.reminders && ContextCompat.checkSelfPermission(context,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)Text("系统通知权限已关闭，请在系统设置中恢复或关闭此开关。",color=MaterialTheme.colorScheme.error)
   }
   Tile {
    Section("数据与隐私")
-   Text("记录、手部运动次数、出货量、手填地点和勋章只在本机数据库。无网络和定位权限，系统自动备份已关闭；卸载前请主动导出。",color=Color.Gray)
+   Text("记录、手部运动次数、出货量、手填地点和勋章只在本机数据库。无网络和定位权限，系统自动备份已关闭；卸载前请主动导出。",color=MaterialTheme.colorScheme.onSurfaceVariant)
    Button(enabled=!busy,onClick={password="";encrypted=true;dialog="export"},modifier=Modifier.fillMaxWidth()) {Text("导出备份")}
    OutlinedButton(enabled=!busy,onClick={password="";dialog="import"},modifier=Modifier.fillMaxWidth()) {Text("导入备份")}
    if(busy) {LinearProgressIndicator(Modifier.fillMaxWidth());Text("正在处理备份，请稍候")}
@@ -77,9 +77,9 @@ import java.time.*
   Tile {
    Section("关于撸了吗")
    Text("LuLeMa · v${BuildConfig.VERSION_NAME}\nSerious tracking. Ridiculous vibes.")
-   Text("这是娱乐性记录工具，不是医学诊断工具。无需登录，无广告，无追踪。\nMIT License · © 2026 LuLeMa contributors",color=Color.Gray)
+   Text("这是娱乐性记录工具，不是医学诊断工具。无需登录，无广告，无追踪。\nMIT License · © 2026 LuLeMa contributors",color=MaterialTheme.colorScheme.onSurfaceVariant)
    TextButton(onClick={runCatching {context.startActivity(Intent(Intent.ACTION_VIEW,"https://github.com/J-Ruan/LuLeMa".toUri()))}.onFailure {info="没有可用浏览器，请手动访问 github.com/J-Ruan/LuLeMa"}}) {Text("GitHub 开源项目 ↗")}
-   Text("外部链接由系统浏览器打开，App 本身不申请网络权限。",style=MaterialTheme.typography.bodySmall,color=Color.Gray)
+   Text("外部链接由系统浏览器打开，App 本身不申请网络权限。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
   }
  }
  if(dialog=="clear")Confirm("清除全部本地数据？","这会永久删除记录、设置和成就，并关闭提醒。无法撤销，请先备份。",{dialog=null}) {vm.clear();dialog=null}
@@ -89,7 +89,7 @@ import java.time.*
    Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
     if(exporting)Row {Text("密码保护",Modifier.weight(1f));Switch(checked=encrypted,onCheckedChange={encrypted=it})}
     if(!exporting || encrypted) {
-     Text("加密备份请输入至少 8 位密码。明文导入可留空。密码无法找回。",color=Color.Gray)
+     Text("加密备份请输入至少 8 位密码。明文导入可留空。密码无法找回。",color=MaterialTheme.colorScheme.onSurfaceVariant)
      OutlinedTextField(value=password,onValueChange={if(it.length<=128)password=it},label={Text("备份密码")},visualTransformation=PasswordVisualTransformation(),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Password),singleLine=true)
     }
     if(exporting && !encrypted)Text("注意：明文文件包含私密记录、时长、手部运动次数、出货量、地点、备注、设置和成就。选择安全位置并妥善保管。",color=MaterialTheme.colorScheme.error)

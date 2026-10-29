@@ -49,7 +49,6 @@ import java.time.*
 import java.time.format.DateTimeFormatter
 import kotlin.math.max
 
-private val Gray=Color(0xFF86868B)
 private data class Tab(val route:String,val title:String,val icon:ImageVector)
 private val tabs=listOf(Tab("home","首页",Icons.Outlined.Home),Tab("calendar","日历",Icons.Outlined.CalendarMonth),Tab("stats","统计",Icons.Outlined.BarChart),Tab("achievements","成就",Icons.Outlined.WorkspacePremium),Tab("me","我的",Icons.Outlined.Person))
 
@@ -67,7 +66,7 @@ fun ArchiveApp(vm:ArchiveViewModel) {
   WindowCompat.getInsetsController(it,view).isAppearanceLightStatusBars=!dark
   WindowCompat.getInsetsController(it,view).isAppearanceLightNavigationBars=!dark
  } }
- val colors=if(dark) darkColorScheme(primary=Color.White,onPrimary=Color.Black,background=Color.Black,surface=Color.Black,surfaceContainer=Color(0xFF1C1C1E),secondaryContainer=Color(0xFF333333)) else lightColorScheme(primary=Color(0xFF111111),onPrimary=Color.White,background=Color.White,surface=Color.White,surfaceContainer=Color(0xFFF5F5F7),secondaryContainer=Color(0xFFE8E8EB))
+ val colors=if(dark) ArchiveDarkColors else ArchiveLightColors
  MaterialTheme(colorScheme=colors) {
   val nav=rememberNavController()
   val route=nav.currentBackStackEntryAsState().value?.destination?.route?:"home"
@@ -133,7 +132,7 @@ fun ArchiveApp(vm:ArchiveViewModel) {
 @Composable internal fun Page(title:String,subtitle:String,content:@Composable ColumnScope.()->Unit) {
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=24.dp,vertical=20.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) {
   Text(title,fontSize=34.sp,fontWeight=FontWeight.Bold)
-  if(subtitle.isNotEmpty())Text(subtitle,color=Gray,style=MaterialTheme.typography.bodyMedium)
+  if(subtitle.isNotEmpty())Text(subtitle,color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodyMedium)
   content()
   Spacer(Modifier.height(12.dp))
  }
@@ -144,14 +143,14 @@ fun ArchiveApp(vm:ArchiveViewModel) {
  }
 }
 @Composable internal fun Section(title:String) {Text(title,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.SemiBold)}
-@Composable internal fun Metric(label:String,value:String) { Column {Text(label,color=Gray,style=MaterialTheme.typography.labelLarge);AnimatedContent(targetState=value,label="metric") {Text(it,fontSize=28.sp,fontWeight=FontWeight.SemiBold)}} }
+@Composable internal fun Metric(label:String,value:String) { Column {Text(label,color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.labelLarge);AnimatedContent(targetState=value,label="metric") {Text(it,fontSize=28.sp,fontWeight=FontWeight.SemiBold)}} }
 private fun timeLabel(e:Entry) = e.minute?.let {"%02d:%02d".format(it/60,it%60)}?:"未填写时间"
 @Composable private fun RecordRow(e:Entry,onClick:()->Unit) {
  Surface(onClick=onClick,shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surfaceContainer,modifier=Modifier.fillMaxWidth()) {
   Row(Modifier.padding(18.dp),verticalAlignment=Alignment.CenterVertically) {
    Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(6.dp)) {
     Text(LocalDate.ofEpochDay(e.day).toString(),fontWeight=FontWeight.SemiBold)
-    Text("${timeLabel(e)} · ${if(e.duration==0) "时长未填写" else "${e.duration} 分钟"}",color=Gray)
+    Text("${timeLabel(e)} · ${if(e.duration==0) "时长未填写" else "${e.duration} 分钟"}",color=MaterialTheme.colorScheme.onSurfaceVariant)
     if(e.mood.isNotEmpty())Text(e.mood,style=MaterialTheme.typography.labelMedium)
     if(e.note.isNotEmpty())Text(e.note,maxLines=2,style=MaterialTheme.typography.bodySmall)
     if(e.handCount!=null || e.volumeMl!=null || e.location!=null)Text(listOfNotNull(e.handCount?.let {"手部运动 $it 次"},e.volumeMl?.let {"${formatVolume(it)} mL"},e.location).joinToString(" · "),maxLines=2,style=MaterialTheme.typography.bodySmall)
@@ -171,24 +170,24 @@ private fun timeLabel(e:Entry) = e.minute?.let {"%02d:%02d".format(it/60,it%60)}
    val now=System.currentTimeMillis();taps=if(now-lastTap>2000)1 else taps+1;lastTap=now
    if(taps>=5) {secret();taps=0}
   })
-  Text(subtitle,color=Gray)
+  Text(subtitle,color=MaterialTheme.colorScheme.onSurfaceVariant)
   Tile {
-   Text(today.format(DateTimeFormatter.ofPattern("M 月 d 日 · EEEE",java.util.Locale.CHINA)),color=Gray)
+   Text(today.format(DateTimeFormatter.ofPattern("M 月 d 日 · EEEE",java.util.Locale.CHINA)),color=MaterialTheme.colorScheme.onSurfaceVariant)
    Text(if(entries.any {it.day==today.toEpochDay()}) "今日档案已入库" else "今日暂无神秘操作记录",fontSize=24.sp,fontWeight=FontWeight.SemiBold)
    Text("今日记录 ${entries.count { it.day==today.toEpochDay() }} 次",modifier=Modifier.testTag("today-count"))
-   Text("按自己的节奏生活。记录只是记录。",color=Gray)
+   Text("按自己的节奏生活。记录只是记录。",color=MaterialTheme.colorScheme.onSurfaceVariant)
    val interactions=remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
    val pressed by interactions.collectIsPressedAsState()
    val scale by animateFloatAsState(if(pressed)0.97f else 1f,label="button")
    Button(onClick=add,interactionSource=interactions,modifier=Modifier.fillMaxWidth().heightIn(min=54.dp).scale(scale)) {Text("+ 记一次",fontSize=18.sp)}
   }
   Section("本月概览")
-  Tile {FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(28.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {Metric("记录", "${month.count} 次");Metric("累计时长","${month.minutes} 分钟")};Text("最近一次 · ${month.latest?.let {LocalDate.ofEpochDay(it)}?:"暂无"}",color=Gray)}
+  Tile {FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(28.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {Metric("记录", "${month.count} 次");Metric("累计时长","${month.minutes} 分钟")};Text("最近一次 · ${month.latest?.let {LocalDate.ofEpochDay(it)}?:"暂无"}",color=MaterialTheme.colorScheme.onSurfaceVariant)}
   Section("最近一次记录")
-  entries.firstOrNull()?.let { e->RecordRow(e) {edit(e)} } ?: Text("档案柜还是空的，不着急。",color=Gray)
+  entries.firstOrNull()?.let { e->RecordRow(e) {edit(e)} } ?: Text("档案柜还是空的，不着急。",color=MaterialTheme.colorScheme.onSurfaceVariant)
   ReportsPanel(entries,p,today,yearViewed)
-  Tile {Text("今日抽象语录",color=Gray);Text(Copybook.quotes[quote%Copybook.quotes.size],fontSize=19.sp);TextButton(onClick={quote++}) {Text("换一个结论")}}
-  Text("娱乐性记录工具，不提供医学诊断。",color=Gray,style=MaterialTheme.typography.bodySmall)
+  Tile {Text("今日抽象语录",color=MaterialTheme.colorScheme.onSurfaceVariant);Text(Copybook.quotes[quote%Copybook.quotes.size],fontSize=19.sp);TextButton(onClick={quote++}) {Text("换一个结论")}}
+  Text("娱乐性记录工具，不提供医学诊断。",color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)
  }
 }
 @Composable private fun CalendarPage(entries:List<Entry>,p:Preferences,today:LocalDate,add:(LocalDate)->Unit,edit:(Entry)->Unit,history:()->Unit) {
@@ -206,13 +205,13 @@ private fun timeLabel(e:Entry) = e.minute?.let {"%02d:%02d".format(it/60,it%60)}
   TextButton(onClick={monthText=YearMonth.from(today).toString();selectedDay=today.toEpochDay()}) {Text("返回今天")}
   AnimatedContent(targetState=month,label="month") { shown ->
    Column {
-    Row { (if(p.mondayFirst) listOf("一","二","三","四","五","六","日") else listOf("日","一","二","三","四","五","六")).forEach {Text(it,Modifier.weight(1f).wrapContentWidth(),color=Gray)} }
+    Row { (if(p.mondayFirst) listOf("一","二","三","四","五","六","日") else listOf("日","一","二","三","四","五","六")).forEach {Text(it,Modifier.weight(1f).wrapContentWidth(),color=MaterialTheme.colorScheme.onSurfaceVariant)} }
     Analysis.calendar(shown,p.mondayFirst).chunked(7).forEach { week ->
      Row(Modifier.fillMaxWidth()) {week.forEach {day ->
       val chosen=day?.toEpochDay()==selectedDay
       Box(Modifier.weight(1f).heightIn(min=52.dp).then(if(day!=null && day<=today) Modifier.clickable {selectedDay=day.toEpochDay()} else Modifier),contentAlignment=Alignment.Center) {
        if(day!=null) Column(horizontalAlignment=Alignment.CenterHorizontally) {
-        Surface(shape=RoundedCornerShape(12.dp),color=if(chosen)MaterialTheme.colorScheme.primary else Color.Transparent) {Text("${day.dayOfMonth}",Modifier.padding(8.dp),color=if(chosen)MaterialTheme.colorScheme.onPrimary else if(day>today)Gray else MaterialTheme.colorScheme.onSurface)}
+        Surface(shape=RoundedCornerShape(12.dp),color=if(chosen)MaterialTheme.colorScheme.primary else Color.Transparent) {Text("${day.dayOfMonth}",Modifier.padding(8.dp),color=if(chosen)MaterialTheme.colorScheme.onPrimary else if(day>today)MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)}
         if(marks.containsKey(day.toEpochDay()))Text("•",fontSize=10.sp,modifier=Modifier.semantics {contentDescription="${day} 记录 ${marks[day.toEpochDay()]} 次"})
        }
       }
@@ -222,7 +221,7 @@ private fun timeLabel(e:Entry) = e.minute?.let {"%02d:%02d".format(it/60,it%60)}
   }
   FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)) {Text(selected.toString(),fontWeight=FontWeight.Bold);TextButton(onClick={add(selected)}) {Text("+ 记一次")}}
   val records=entries.filter {it.day==selectedDay}
-  if(records.isEmpty())Text("这一天没有档案。留白也很好。",color=Gray)
+  if(records.isEmpty())Text("这一天没有档案。留白也很好。",color=MaterialTheme.colorScheme.onSurfaceVariant)
   records.forEach {e->RecordRow(e) {edit(e)}}
  }
 }
@@ -257,7 +256,7 @@ private fun timeLabel(e:Entry) = e.minute?.let {"%02d:%02d".format(it/60,it%60)}
    OutlinedTextField(value=note,onValueChange={if(it.length<=1000)note=it},label={Text("个人备注（可选，1000 字内）")},maxLines=4,modifier=Modifier.fillMaxWidth())
    TextButton(onClick={more=!more},modifier=Modifier.testTag("more-fields")) {Text(if(more)"收起更多记录信息" else "更多记录信息 · 次数、出货量、地点")}
    if(more) {
-    Text("以下均为选填，只保存在本机。留空与填写 0 分别保存。",color=Gray,style=MaterialTheme.typography.bodySmall)
+    Text("以下均为选填，只保存在本机。留空与填写 0 分别保存。",color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)
     OutlinedTextField(value=handCount,onValueChange={if(it.length<=24)handCount=it},label={Text("手部运动次数（可选）")},supportingText={Text("非负整数；与记录次数分别统计")},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number),singleLine=true,modifier=Modifier.fillMaxWidth().testTag("hand-count-input"))
     OutlinedTextField(value=volume,onValueChange={if(it.length<=24)volume=it},label={Text("出货量（mL，可选）")},supportingText={Text("0–1000 mL，最多三位小数")},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Decimal),singleLine=true,modifier=Modifier.fillMaxWidth().testTag("volume-input"))
     OutlinedTextField(value=location,onValueChange={if(it.length<=101)location=it},label={Text("地点（可选，100 字内）")},singleLine=true,modifier=Modifier.fillMaxWidth().testTag("location-input"))

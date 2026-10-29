@@ -32,8 +32,8 @@ internal fun StatsPage(entries:List<Entry>,today:LocalDate,mondayFirst:Boolean,y
  Page("统计","这数据，严谨得有点离谱。") {
   val all=Analysis.summary(entries)
   val monthly=Analysis.summary(Analysis.month(entries,YearMonth.from(today)))
-  Tile {Metric("历史档案","${all.count} 次");Metric("本月档案","${monthly.count} 次");Metric("累计时长","${all.minutes} 分钟");Metric("平均已填时长",if(all.measuredCount==0)"暂无数据" else "%.1f 分钟".format(all.average));Text("最近一次 · ${all.latest?.let {LocalDate.ofEpochDay(it)}?:"暂无"}",color=Color.Gray)}
-  Text("频率只是个人记录，不是成绩。平均值与时长趋势仅含大于 0 的已填写时长；未填写 ${all.missingDurationCount} 次。",color=Color.Gray)
+  Tile {Metric("历史档案","${all.count} 次");Metric("本月档案","${monthly.count} 次");Metric("累计时长","${all.minutes} 分钟");Metric("平均已填时长",if(all.measuredCount==0)"暂无数据" else "%.1f 分钟".format(all.average));Text("最近一次 · ${all.latest?.let {LocalDate.ofEpochDay(it)}?:"暂无"}",color=MaterialTheme.colorScheme.onSurfaceVariant)}
+  Text("频率只是个人记录，不是成绩。平均值与时长趋势仅含大于 0 的已填写时长；未填写 ${all.missingDurationCount} 次。",color=MaterialTheme.colorScheme.onSurfaceVariant)
   Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {listOf(7,30).forEach {days->FilterChip(selected=range==days,onClick={range=days},label={Text("最近 $days 天")})}}
   ChartCard("最近 $range 天 · 每日记录",charts.days.map {it.second.toFloat()},"${today.minusDays(range.toLong()-1)} — $today", "次")
   ChartCard("单次时长变化",charts.durations,"仅已填时长，按档案日期、时间排列；共 ${charts.durations.size} 次","分钟",true)
@@ -48,7 +48,7 @@ internal fun StatsPage(entries:List<Entry>,today:LocalDate,mondayFirst:Boolean,y
     Section("人类迷惑行为年度研究报告")
     val stats=Analysis.summary(Analysis.year(entries,year))
     Text("$year 年共记录 ${stats.count} 次 · ${stats.minutes} 分钟")
-    Text("宇宙照常运转。谢谢你照顾自己的生活。",color=Color.Gray)
+    Text("宇宙照常运转。谢谢你照顾自己的生活。",color=MaterialTheme.colorScheme.onSurfaceVariant)
    }
   }
   YearHeatmap(year,entries,mondayFirst)
@@ -58,7 +58,7 @@ internal fun StatsPage(entries:List<Entry>,today:LocalDate,mondayFirst:Boolean,y
  val heat=remember(entries,year) {Analysis.year(entries,year).groupingBy {it.day}.eachCount()}
  Tile {
    Section("年度日历热力图")
-   Text("$year 年 · 每列一周，${if(mondayFirst)"周一至周日" else "周日至周六"}。空白代表无记录。",color=Color.Gray)
+   Text("$year 年 · 每列一周，${if(mondayFirst)"周一至周日" else "周日至周六"}。空白代表无记录。",color=MaterialTheme.colorScheme.onSurfaceVariant)
    val start=LocalDate.of(year,1,1)
    val count=start.lengthOfYear()
    val offset=(start.dayOfWeek.value-(if(mondayFirst)1 else 7)+7)%7
@@ -72,15 +72,15 @@ internal fun StatsPage(entries:List<Entry>,today:LocalDate,mondayFirst:Boolean,y
      }
     }
    }
-   Text("浅 → 深：0 / 1 / 2 / 3+ 次；颜色只表示数量。",style=MaterialTheme.typography.bodySmall,color=Color.Gray)
+   Text("浅 → 深：0 / 1 / 2 / 3+ 次；颜色只表示数量。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
    if(heat.isEmpty())Text("本年度暂无档案，空白也很完整。")
   }
 }
 @Composable internal fun ChartCard(title:String,values:List<Float>,caption:String,unit:String,line:Boolean=false) {
  Tile {
   Section(title)
-  Text(caption,color=Color.Gray,style=MaterialTheme.typography.bodySmall)
-  if(values.isEmpty() || values.all {it==0f})Text("暂无有效图表数据。",Modifier.padding(vertical=24.dp),color=Color.Gray)
+  Text(caption,color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)
+  if(values.isEmpty() || values.all {it==0f})Text("暂无有效图表数据。",Modifier.padding(vertical=24.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)
   else {
    val color=MaterialTheme.colorScheme.onSurface
    var shown by remember(values) {mutableStateOf(false)}

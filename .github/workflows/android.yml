@@ -90,11 +90,20 @@ jobs:
       - name: Configure accelerated emulator
         run: bash .github/scripts/start-emulator.sh
       - run: chmod +x gradlew && ./gradlew --no-daemon :app:connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
+      - name: Retain UI screenshots before the independent R8 installation
+        run: |
+          timeout 20 "$ANDROID_HOME/platform-tools/adb" root
+          timeout 20 "$ANDROID_HOME/platform-tools/adb" wait-for-device
+          timeout 20 "$ANDROID_HOME/platform-tools/adb" pull /data/media/0/Android/data/com.lulema.app/files/screenshots screenshots
       - name: R8 smoke with a development signature, not a formal distribution APK
         run: |
           set -euo pipefail
+          test_key="$RUNNER_TEMP/r8-smoke-only.p12"
+          trap 'rm -f "$test_key"' EXIT
           ./gradlew --no-daemon :app:assembleRelease
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$HOME/.android/debug.keystore" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out "$RUNNER_TEMP/r8-smoke.apk" app/build/outputs/apk/release/app-release-unsigned.apk
+          keytool -genkeypair -noprompt -keystore "$test_key" -storetype PKCS12 -alias smoke -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=LuLeMa R8 smoke test' -storepass android -keypass android
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$test_key" --ks-key-alias smoke --ks-pass pass:android --key-pass pass:android --out "$RUNNER_TEMP/r8-smoke.apk" app/build/outputs/apk/release/app-release-unsigned.apk
+          "$ANDROID_HOME/platform-tools/adb" uninstall com.lulema.app
           python3 .github/scripts/release-smoke.py "$RUNNER_TEMP/r8-smoke.apk"
       - name: Collect device diagnostics
         if: always()

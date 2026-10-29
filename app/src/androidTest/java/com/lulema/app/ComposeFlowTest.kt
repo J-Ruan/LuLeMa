@@ -91,7 +91,7 @@ class ComposeFlowTest {
   rule.onNodeWithTag("nav-home").performClick()
   rule.onNodeWithText("最近一次记录").performScrollTo()
   // The newest synthetic entry is first; deleting through its real detail UI updates the report.
-  rule.onNodeWithContentDescription("查看或编辑档案").performClick()
+  rule.onNodeWithContentDescription("查看或编辑档案").performScrollTo().performClick()
   rule.onNodeWithText("删除这条档案").performScrollTo().performClick()
   rule.onNodeWithText("确认").performClick()
   rule.waitUntil(20000) {runBlocking {repo.dao.all().size==1}}
